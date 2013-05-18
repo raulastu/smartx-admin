@@ -1,0 +1,5 @@
+INSERT INTO `tdriver_locations`(`location`, `last_seen`) VALUES (POINT(-12.097487,-77.041368),NOW());# 1 row affected.
+
+INSERT INTO `tdriver_locations`(`location`, `last_seen`) VALUES (POINT(-12.088507,-77.019053),NOW());# 1 row affected.
+
+INSERT INTO `tdriver_locations`(`location`, `last_seen`) VALUES (POINT(-12.079946,-77.011585),NOW());# 1 row affected.
