@@ -170,10 +170,7 @@
           google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
             console.log(event);
             if (event.type == google.maps.drawing.OverlayType.MARKER) {
-              // var marker = new google.maps.Marker({
-              //     position: new google.maps.LatLng(event.overlay.position.jb, event.overlay.position.kb),
-              //     map:map
-              // });
+
               $.ajax({
                 url: "tdrivers/create_tdriver",
                 context: document.body,
@@ -182,6 +179,7 @@
               }).done(function(data) {
                 console.log("successfully created");
                 console.log(data);
+                event.overlay.setTitle(data)
                 dbMarkers[data] = event.overlay;
               });
               google.maps.event.addListener(event.overlay, 'click', markerClickEvent);

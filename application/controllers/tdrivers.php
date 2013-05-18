@@ -26,6 +26,18 @@ class TDrivers extends CI_Controller {
 
 	}
 
+	public function update_driver_location()
+	{
+		$data = $this->input->post('data');
+		$data = explode('|',$data);
+		$tdriverId = $data[0];
+		$lat = $data[1];
+		$lng = $data[2];
+
+		$newLocationsArray = json_decode($newLocations);
+		echo $this->TDriverModel->updateTDriverLocation($newLocationsArray, $lat, $lng);
+	}
+
 	public function clear_locations()
 	{
 		$this->TDriverModel->clearTDriversLocations($newLocationsArray);
@@ -45,7 +57,7 @@ class TDrivers extends CI_Controller {
 		$N = count($locations);
 		$arr = array();
 		// print_r($locations);
-		for ($i=0; $i < $N; $i++) { 
+		for ($i=0; $i < $N; $i++) {
 			$location = $locations[$i];
 			if($location->tdriver_id==$selectedPointId)
 				continue;
