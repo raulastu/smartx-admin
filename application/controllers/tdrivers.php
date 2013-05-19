@@ -10,10 +10,10 @@ class TDrivers extends CI_Controller {
 	public function locations()
 	{
 		$locations = $this->TDriverModel->getTDriversLocations();
-
+		// print_r($locations);
 		$contents = $this->output
 		                  ->set_content_type('application/json')
-		                  ->set_output(json_encode($locations));
+		                  ->set_output(json_encode($locations, JSON_NUMERIC_CHECK));
 		 // echo json_encode($data['tdrivers_locations']);
 	}
 
@@ -29,13 +29,14 @@ class TDrivers extends CI_Controller {
 	public function update_driver_location()
 	{
 		$data = $this->input->post('data');
-		$data = explode('|',$data);
+		$data = explode(':',$data);
+		// print_r($data);
 		$tdriverId = $data[0];
 		$lat = $data[1];
 		$lng = $data[2];
 
-		$newLocationsArray = json_decode($newLocations);
-		echo $this->TDriverModel->updateTDriverLocation($newLocationsArray, $lat, $lng);
+		// $newLocationsArray = json_decode($newLocations);
+		echo $this->TDriverModel->updateTDriverLocation($tdriverId, $lat, $lng);
 	}
 
 	public function clear_locations()
@@ -64,14 +65,14 @@ class TDrivers extends CI_Controller {
 			array_push($arr,array(
 					'from'=>intval($selectedPointId),
 					'to'=>$location->tdriver_id,
-					'distance'=>$this->distance($selectedPointLat, $selectedPointLng, $location->latitude, $location->longitude),
-					'angle'=>$this->getAngle($selectedPointLat, $selectedPointLng, $location->latitude, $location->longitude)
+					'distance'=>$this->distance($selectedPointLat, $selectedPointLng, $location->lat, $location->lng),
+					'angle'=>$this->getAngle($selectedPointLat, $selectedPointLng, $location->lat, $location->lng)
 				)
 			);
 		}
 		$contents = $this->output
 		                  ->set_content_type('application/json')
-		                  ->set_output(json_encode($arr));
+		                  ->set_output(json_encode($arr), JSON_NUMERIC_CHECK);
 		// echo json_encode($arr);
 	}
 

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map-canvas { height: 100% }
+    </style>
+    <script type="text/javascript" src="../js/vendor/jquery-1.9.0.min.js"></script>
+    <script type="text/javascript">
+      var taxiWorker = [];
+        $.ajax({
+            url: "../tdrivers/locations",
+            context: document.body,
+            type:'json'
+          }).done(function(data) {
+            console.log(data);
+            if(data==null) return;
+            for (var i = 0; i < data.length; i++) {
+
+              var worker = new Worker('taxiWorker.js');
+
+              worker.addEventListener('message', function(e) {
+                console.log('Worker said: ', e.data);
+              }, false);
+              worker.postMessage({
+                type:'init',
+                tdriver_id:data[i]['tdriver_id'],
+                lat:data[i]['lat'],
+                lng:data[i]['lng']
+              }); // Send data to our worker.
+
+              taxiWorker[data[i]['tdriver_id']]=worker;
+              console.log(data[i]['tdriver_id'] + " successfully worker init");
+            };
+          });
+
+    </script>
+  </head>
+</html>

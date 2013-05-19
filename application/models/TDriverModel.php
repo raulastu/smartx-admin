@@ -8,7 +8,7 @@ class TDriverModel extends CI_Model{
 
 
 	function getTDriversLocations(){
-		$sql = "SELECT tdriver_id, X(location) as latitude, Y(location) as longitude FROM tdriver_latest_locations";
+		$sql = "SELECT tdriver_id, X(location) as lat, Y(location) as lng FROM tdriver_latest_locations";
 		$query = $this->db->query($sql);
 		if ($query->num_rows() > 0){
 			return $query->result();
@@ -18,11 +18,11 @@ class TDriverModel extends CI_Model{
 
 	function updateTDriverLocation($tdriverId, $lat, $lng){
 
-		$sql = "INSERT INTO tdriver_location_histories (tdriver_id, lat, lng, NOW()) VALUES (?,?,?)";
-		$query = $this->db->query($array($tdriverId, $lat, $lng));
+		$sql = "INSERT INTO tdriver_location_histories (tdriver_id, lat, lng, reg_date) VALUES (?,?,?,NOW())";
+		$query = $this->db->query($sql,array($tdriverId, $lat, $lng));
 
-		$sql = "UPDATE tdriver_latest_locations SET location = POINT(?,?) WHERE tdriver_id = ?";
-		$query = $this->db->query($array($tdriverId, $lat, $lng));
+		$sql = "UPDATE tdriver_latest_locations SET location = POINT(?,?), reg_date = NOW() WHERE tdriver_id = ?";
+		$query = $this->db->query($sql, array($lat, $lng, $tdriverId));
 		return true;
 	}
 

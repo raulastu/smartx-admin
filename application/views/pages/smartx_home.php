@@ -154,13 +154,6 @@
                      fontSize: 16,
                      align: 'center'
                    });
-                  // flightPath.setMap(map);
-
-                  // var marker = new google.maps.Marker({
-                  //     position: new google.maps.LatLng(lat, lng),
-                  //     map:map,
-                  //     title:""+data[i]['distance']
-                  // });
                 };
                 console.log("successfully sent");
               });
@@ -186,28 +179,92 @@
             }
           });
 
+          // (function poll(){
+          //     $.ajax({ 
+          //       url: "tdrivers/locations",
+          //      success: function(data){
+          //           loadData(data,map);
+          //     }, dataType: "json", complete: poll, timeout: 4000 });
+          // })();
+
+          
+
           $.ajax({
             url: "tdrivers/locations",
             context: document.body,
             data:"ola" 
           }).done(function(data) {
-            
-            if(data==null) return;
-            for (var i = 0;  i<data.length; i++) {
-              var marker = new google.maps.Marker({
-                  position: new google.maps.LatLng(data[i].latitude, data[i].longitude),
-                  map:map,
-                  title:data[i].tdriver_id
-              });
-              google.maps.event.addListener(marker, 'click', markerClickEvent);
-              dbMarkers[data[i].tdriver_id]=marker;
-            };
-            console.log(dbMarkers);
+            loadData(data, map);
+
+            (function poll(){
+               setTimeout(function(){
+                  $.ajax({ 
+                    url: "tdrivers/locations",
+                   success: function(data){
+                    refreshPositions(data, map);
+                    poll();
+                  }, dataType: "json"});
+              }, 1000);
+            })();
+
           });
         
         drawingManager.setMap(map);
 
       }
+      function refreshPositions(data, map){
+        if(data==null) return;
+        for (var i = 0;  i<data.length; i++) {
+          var fromLat = dbMarkers[data[i].tdriver_id].position.jb;
+          var fromLng = dbMarkers[data[i].tdriver_id].position.kb;
+          var toLat=data[i].lat;
+          var toLng=data[i].lng;
+          transition(data[i].tdriver_id, fromLat, fromLng, toLat, toLng)
+        };
+        console.log(dbMarkers);
+      }
+      
+      function transition(id, fromLat, fromLng, toLat, toLng){
+          currentDelta[id] = 0;
+          deltaLat[id] = (toLat - fromLat)/numDeltas;
+          deltaLng[id] = (toLng - fromLng)/numDeltas;
+          moveMarker(id);
+      }
+      var numDeltas=120;
+      var deltaLat=[];
+      var deltaLng=[];
+      var currentDelta=[];
+      var delay=10;
+
+      function moveMarker(id){
+        // id=50;
+        // console.log(id+" "+currentDelta[id]);
+        var newPosLat = dbMarkers[id].position.jb + deltaLat[id];
+        var newPosLng = dbMarkers[id].position.kb + deltaLng[id];
+        var latlng = new google.maps.LatLng(newPosLat, newPosLng);
+        dbMarkers[id].setPosition(latlng);
+        if(currentDelta[id]!=numDeltas){
+            currentDelta[id]++;
+            setTimeout(function(){
+              moveMarker(id);
+            }, delay);
+        }
+      }
+
+      function loadData(data, map){
+        if(data==null) return;
+        for (var i = 0;  i<data.length; i++) {
+          var marker = new google.maps.Marker({
+              position: new google.maps.LatLng(data[i].lat, data[i].lng),
+              map:map,
+              title:""+data[i].tdriver_id
+          });
+          google.maps.event.addListener(marker, 'click', markerClickEvent);
+          dbMarkers[data[i].tdriver_id]=marker;
+        };
+        console.log(dbMarkers);
+      }
+
       var markerClickEvent = function(event) {
             console.log(this);
             
