@@ -27,8 +27,8 @@
               worker.postMessage({
                 type:'init',
                 tdriver_id:data[i]['tdriver_id'],
-                lat:data[i]['lat'],
-                lng:data[i]['lng']
+                lat:parseFloat(data[i]['lat']),
+                lng:parseFloat(data[i]['lng'])
               }); // Send data to our worker.
 
               taxiWorker[data[i]['tdriver_id']]=worker;

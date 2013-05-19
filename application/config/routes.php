@@ -44,6 +44,7 @@ $route['tdrivers/locations'] = 'tdrivers/locations';
 $route['tdrivers/(.+)'] = "tdrivers/$1";
 $route['tdrivers/(.+)/(.+)'] = "tdrivers/$1/$2";
 $route['tdrivers'] = 'tdrivers';
+$route['users/(.+)'] = "users/$1";
 $route['fblogin/dologin'] = 'fblogin/dologin';
 $route['fblogin'] = 'fblogin';
 $route['user/(:any)'] = 'user/view/$1';

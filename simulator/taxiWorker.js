@@ -21,10 +21,13 @@ var factor=1000;
 function init(){
 	setInterval(function(){
 		var si=Math.round(Math.random()*3);
-		var newlat = lat+di[si]/factor;
-		var newlng = lng+dj[si]/factor;
+		var distance = Math.random()*5;
+		var newlat = lat+di[si]*distance/factor;
+		var newlng = lng+dj[si]*distance/factor;
+		self.postMessage("Hello from "+tdriver_id+ " at "+lat+" "+lng);
 		self.postMessage("new latlng si ="+si+" "+newlat+" "+newlng);
-
+		lat= newlat;
+		lng=newlng;
 		 $.ajax.post({
 	        url: "../tdrivers/update_driver_location",
 	        data:"data="+tdriver_id+":"+newlat+":"+newlng,
@@ -32,6 +35,6 @@ function init(){
 	        	self.postMessage(data);
 	      	}
 	      })
-		self.postMessage("Hello from "+tdriver_id+ " at "+lat+" "+lng);
+		
 	},interval*1000);
 }

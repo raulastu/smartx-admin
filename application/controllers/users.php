@@ -1,16 +1,24 @@
 <?php
-class TDrivers extends CI_Controller {
+class Users extends CI_Controller {
 
 	public function __construct()
 	{
 		parent::__construct();
-		$this->load->model('TDriverModel');
 		$this->load->model('UserModel');
 	}
 
+	public function everyone_locations()
+	{
+		$locations = $this->UserModel->getEveryoneLocations();
+		// print_r($locations);
+		$contents = $this->output
+		                  ->set_content_type('application/json')
+		                  ->set_output(json_encode($locations));
+		 // echo json_encode($data['tdrivers_locations']);
+	}
 	public function locations()
 	{
-		$locations = $this->TDriverModel->getTDriversLocations();
+		$locations = $this->UserModel->getUserLocations();
 		// print_r($locations);
 		$contents = $this->output
 		                  ->set_content_type('application/json')
@@ -18,14 +26,15 @@ class TDrivers extends CI_Controller {
 		 // echo json_encode($data['tdrivers_locations']);
 	}
 
-	public function create_tdriver()
+	public function create_user()
 	{
 		$newLocations = $this->input->post('data');
 		
 		$newLocationsArray = json_decode($newLocations);
-		echo 'd'.$this->TDriverModel->createNewTDriver($newLocationsArray);
-
+		// print_r($newLocationsArray);
+		echo "u".$this->UserModel->createNewUser($newLocationsArray);
 	}
+
 
 	public function update_driver_location()
 	{
@@ -42,7 +51,7 @@ class TDrivers extends CI_Controller {
 
 	public function clear_locations()
 	{
-		echo $this->TDriverModel->clearTDriversLocations();
+		echo $this->UserModel->clearUserLocations();
 	}
 
 

@@ -20,7 +20,8 @@
       var dbMarkers = [];
       var markerLocations = [];
       var selectedMarker;
-
+      var markerMode='tdriver';
+      var userMarkerIcon = "http://westminster.boskalis.com/fileadmin/custom/images/marker_icon3.png";
       function MyControl(controlName, map) {
         var controlDiv = document.createElement("div");
 
@@ -28,6 +29,7 @@
         // Setting padding to 5 px will offset the control
         // from the edge of the map.
         controlDiv.style.padding = '5px';
+        controlDiv.id=controlName;
 
         // Set CSS for the control border.
         var controlUI = document.createElement('div');
@@ -69,42 +71,39 @@
         };
         var map = new google.maps.Map(document.getElementById("map-canvas"),
             mapOptions);
-        var drawingManager = new google.maps.drawing.DrawingManager();
-        // var drawingManager = new google.maps.drawing.DrawingManager({
-        //   drawingMode: google.maps.drawing.OverlayType.MARKER,
-        //   drawingControl: true,
-        //   drawingControlOptions: {
-        //     position: google.maps.ControlPosition.TOP_CENTER,
-        //     drawingModes: [
-        //       google.maps.drawing.OverlayType.MARKER,
-        //       google.maps.drawing.OverlayType.CIRCLE,
-        //       google.maps.drawing.OverlayType.POLYGON,
-        //       google.maps.drawing.OverlayType.POLYLINE,
-        //       google.maps.drawing.OverlayType.RECTANGLE
-        //     ]
-        //   },
-        //   markerOptions: {
-        //     icon: 'http://www.example.com/icon.png'
-        //   },
-        //   circleOptions: {
-        //     fillColor: '#ffff00',
-        //     fillOpacity: 1,
-        //     strokeWeight: 5,
-        //     clickable: false,
-        //     zIndex: 1,
-        //     editable: true
-        //   }
-        // });
-        // drawingManager.setOptions({
-        //   drawingControlOptions: {
-        //     position: google.maps.ControlPosition.BOTTOM_LEFT,
-        //     drawingModes: [google.maps.drawing.OverlayType.MARKER]
-        //   }
-        // });
-          var clearMarkersControl = new MyControl('clear', map);
+        // var drawingManager = new google.maps.drawing.DrawingManager();
+        var drawingManager = new google.maps.drawing.DrawingManager({
+          // drawingMode: google.maps.drawing.OverlayType.MARKER,
+          drawingControl: true,
+          drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_LEFT,
+            drawingModes: [
+              google.maps.drawing.OverlayType.MARKER,
+              google.maps.drawing.OverlayType.CIRCLE,
+              google.maps.drawing.OverlayType.POLYGON,
+              google.maps.drawing.OverlayType.POLYLINE,
+              google.maps.drawing.OverlayType.RECTANGLE
+            ]
+          },
+          circleOptions: {
+            fillColor: '#ffff00',
+            fillOpacity: 1,
+            strokeWeight: 5,
+            clickable: false,
+            zIndex: 1,
+            editable: true
+          }
+        });
+          var clearTDriversControl = new MyControl('clear tdrivers', map);
+          var clearUsersControl = new MyControl('clear users', map);
           var closestMarkersControl = new MyControl('get closest', map);
-
-          google.maps.event.addDomListener(clearMarkersControl, 'click', function() {
+          var tdriver_usertoggle = new MyControl('tdriver', map);
+          google.maps.event.addDomListener(tdriver_usertoggle, 'click', function() {
+              markerMode=(markerMode=='tdriver')?'passenger':'tdriver';
+              $("#tdriver>div>div>strong").html(markerMode);
+              // console.log(("#"+markerMode+">div>div>strong").html());
+          });
+          google.maps.event.addDomListener(clearTDriversControl, 'click', function() {
               $.ajax({
                 url: "tdrivers/clear_locations",
                 context: document.body
@@ -112,6 +111,15 @@
                 console.log("successfully cleared");
               });
           });
+          google.maps.event.addDomListener(clearUsersControl, 'click', function() {
+              $.ajax({
+                url: "users/clear_locations",
+                context: document.body
+              }).done(function(data) {
+                console.log(data+" successfully cleared");
+              });
+          });
+          
 
           google.maps.event.addDomListener(closestMarkersControl, 'click', function() {
               $.ajax({
@@ -163,19 +171,37 @@
           google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
             console.log(event);
             if (event.type == google.maps.drawing.OverlayType.MARKER) {
-
-              $.ajax({
-                url: "tdrivers/create_tdriver",
-                context: document.body,
-                type:"POST",
-                data:"data="+JSON.stringify(new Array(event.overlay.position.jb, event.overlay.position.kb))
-              }).done(function(data) {
-                console.log("successfully created");
-                console.log(data);
-                event.overlay.setTitle(data)
-                dbMarkers[data] = event.overlay;
-              });
-              google.maps.event.addListener(event.overlay, 'click', markerClickEvent);
+              
+              var latlng = new Array(event.overlay.position.jb+"", event.overlay.position.kb+"");
+              console.log("sending "+ latlng);
+              if($("#tdriver>div>div>strong").html()=='tdriver'){
+                $.ajax({
+                  url: "tdrivers/create_tdriver",
+                  context: document.body,
+                  type:"POST",
+                  data:"data="+JSON.stringify(latlng)
+                }).done(function(data) {
+                  console.log("successfully created");
+                  console.log(data);
+                  event.overlay.setTitle(data)
+                  dbMarkers[data] = event.overlay;
+                });
+                google.maps.event.addListener(event.overlay, 'click', markerClickEvent);
+              }else{
+                $.ajax({
+                  url: "users/create_user",
+                  context: document.body,
+                  type:"POST",
+                  data:"data="+JSON.stringify(latlng)
+                }).done(function(data) {
+                  console.log("successfully created");
+                  console.log(data);
+                  event.overlay.setTitle(data)
+                  event.overlay.setIcon(userMarkerIcon);
+                  dbMarkers[data] = event.overlay;
+                });
+                google.maps.event.addListener(event.overlay, 'click', markerClickEvent);
+              }
             }
           });
 
@@ -190,7 +216,7 @@
           
 
           $.ajax({
-            url: "tdrivers/locations",
+            url: "users/everyone_locations",
             context: document.body,
             data:"ola" 
           }).done(function(data) {
@@ -199,12 +225,12 @@
             (function poll(){
                setTimeout(function(){
                   $.ajax({ 
-                    url: "tdrivers/locations",
+                    url: "users/everyone_locations",
                    success: function(data){
                     refreshPositions(data, map);
                     poll();
                   }, dataType: "json"});
-              }, 1000);
+              }, 2000);
             })();
 
           });
@@ -215,11 +241,11 @@
       function refreshPositions(data, map){
         if(data==null) return;
         for (var i = 0;  i<data.length; i++) {
-          var fromLat = dbMarkers[data[i].tdriver_id].position.jb;
-          var fromLng = dbMarkers[data[i].tdriver_id].position.kb;
+          var fromLat = dbMarkers[data[i].id].position.jb;
+          var fromLng = dbMarkers[data[i].id].position.kb;
           var toLat=data[i].lat;
           var toLng=data[i].lng;
-          transition(data[i].tdriver_id, fromLat, fromLng, toLat, toLng)
+          transition(data[i].id, fromLat, fromLng, toLat, toLng)
         };
         console.log(dbMarkers);
       }
@@ -255,12 +281,17 @@
         if(data==null) return;
         for (var i = 0;  i<data.length; i++) {
           var marker = new google.maps.Marker({
-              position: new google.maps.LatLng(data[i].lat, data[i].lng),
-              map:map,
-              title:""+data[i].tdriver_id
-          });
+                position: new google.maps.LatLng(data[i].lat, data[i].lng),
+                map:map,
+                title:""+data[i].id
+            });
+          if(data[i].id.indexOf('u')==0){
+           marker.setIcon(userMarkerIcon);
+          }else{
+            
+          } 
           google.maps.event.addListener(marker, 'click', markerClickEvent);
-          dbMarkers[data[i].tdriver_id]=marker;
+          dbMarkers[data[i].id]=marker;
         };
         console.log(dbMarkers);
       }
