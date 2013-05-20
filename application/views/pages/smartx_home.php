@@ -43,7 +43,7 @@
     <script type="text/javascript" src="js/third/sprintf.min.js"></script>
     <script type="text/javascript" src="js/vendor/jquery-1.9.0.min.js"></script>
     <script type="text/javascript" src="js/third/sprintf.min.js"></script>
-    <script type="text/javascript" src="http://code.martinpearman.co.uk/googlemapsapi/contextmenu/1.0/src/ContextMenu.js"></script>
+    <script type="text/javascript" src="js/third/ContextMenu.js"></script>
     
     
     <script type="text/javascript">
@@ -146,9 +146,6 @@
           case 'zoom_out_click':
             map.setZoom(map.getZoom()-1);
             break;
-          case 'center_map_click':
-            map.panTo(latLng);
-            break;
         }
       });
 
@@ -236,7 +233,6 @@
                 var radius=data[i]['distance']/2;
                 console.log('distance = '+data[i]['distance']);
                 console.log('radius = '+data[i]['distance']/2);
-                console.log('angle='+data[i]['angle']);
                 var lat = (dbMarkers[data[i]["from"]].position.jb + dbMarkers[data[i]["to"]].position.jb)/2;
                 var lng = (dbMarkers[data[i]["from"]].position.kb + dbMarkers[data[i]["to"]].position.kb)/2;
                 console.log(lat);

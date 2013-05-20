@@ -5,6 +5,7 @@ class Users extends CI_Controller {
 	{
 		parent::__construct();
 		$this->load->model('UserModel');
+		$this->load->model('TDriverModel');
 	}
 
 	public function everyone_locations()
@@ -61,7 +62,25 @@ class Users extends CI_Controller {
 		}
 		
 		// print_r($newLocationsArray);
-		echo $this->UserModel->startRide($userId, $userAddressId);	
+		$rideInfo = $this->UserModel->startRide($userId, $userAddressId);
+
+		$locations = $this->TDriverModel->getTDriversLocations();
+		$N = count($locations);
+		$closestTDriverIds = array();
+		// print_r($locations);
+		for ($i=0; $i < $N; $i++) {
+			$location = $locations[$i];
+			$distance = $this->distance($rideInfo->lat, $rideInfo->lng, $location->lat, $location->lng);
+			if($distance<1.0){ // in km
+				array_push($closestTDriverIds, $location->tdriver_id);
+			}
+		}
+		$this->UserModel->create_initial_request_poll($rideInfo->rideId,$closestTDriverIds);
+
+		$res= array("rideId"=>$rideInfo->rideId, "assigned_tdrivers"=>$closestTDriverIds);
+		$contents = $this->output
+	              ->set_content_type('application/json')
+	              ->set_output(json_encode($res));
 	}
 	public function update_driver_location()
 	{
@@ -102,8 +121,7 @@ class Users extends CI_Controller {
 			array_push($arr,array(
 					'from'=>intval($selectedPointId),
 					'to'=>$location->tdriver_id,
-					'distance'=>$this->distance($selectedPointLat, $selectedPointLng, $location->lat, $location->lng),
-					'angle'=>$this->getAngle($selectedPointLat, $selectedPointLng, $location->lat, $location->lng)
+					'distance'=>$this->distance($selectedPointLat, $selectedPointLng, $location->lat, $location->lng)
 				)
 			);
 		}
@@ -111,12 +129,6 @@ class Users extends CI_Controller {
 		                  ->set_content_type('application/json')
 		                  ->set_output(json_encode($arr), JSON_NUMERIC_CHECK);
 		// echo json_encode($arr);
-	}
-
-	private function getAngle($lat1, $lon1, $lat2, $lon2){
-		$deltaY = $lat1- $lat2;
-		$deltaX = $lon2 - $lon1;
-		return 360 + atan2($deltaY, $deltaX) * M_PI/180 ;
 	}
 
 	private function distance($lat1, $lon1, $lat2, $lon2) {
