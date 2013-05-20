@@ -51,7 +51,7 @@ class TDrivers extends CI_Controller {
 	{
 		$selectedPoint = $this->input->post('selectedPoint');
 		$selectedPointArray = json_decode($selectedPoint);
-		$selectedPointId=$selectedPointArray->tdriver_id;
+		$selectedPointId=$selectedPointArray->selected_id;
 		$selectedPointLat=$selectedPointArray->lat;
 		$selectedPointLng=$selectedPointArray->lng;
 		// print_r($selectedPoint);
@@ -61,11 +61,11 @@ class TDrivers extends CI_Controller {
 		// print_r($locations);
 		for ($i=0; $i < $N; $i++) {
 			$location = $locations[$i];
-			if($location->tdriver_id==$selectedPointId)
+			if('d'.$location->tdriver_id==$selectedPointId)
 				continue;
 			array_push($arr,array(
-					'from'=>intval($selectedPointId),
-					'to'=>$location->tdriver_id,
+					'from'=>$selectedPointId,
+					'to'=>'d'.$location->tdriver_id,
 					'distance'=>$this->distance($selectedPointLat, $selectedPointLng, $location->lat, $location->lng),
 					'angle'=>$this->getAngle($selectedPointLat, $selectedPointLng, $location->lat, $location->lng)
 				)

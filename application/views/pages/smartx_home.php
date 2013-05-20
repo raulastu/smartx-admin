@@ -3,25 +3,59 @@
   <head>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
     <style type="text/css">
-      html { height: 100% }
+      html{
+        font-family:Arial, Helvetica, sans-serif;
+        font-size:12px;
+        height:100%;
+      }
       body { height: 100%; margin: 0; padding: 0 }
+
+            /*  start styles for the ContextMenu  */
+      .context_menu{
+        background-color:white;
+        border:1px solid gray;
+      }
+      .context_menu_item{
+        background-color:black;
+        color:white;
+        padding:3px 6px;
+      }
+      .context_menu_item:hover{
+        background-color:rgb(68, 65, 70);
+      }
+      .context_menu_separator{
+        background-color:gray;
+        height:1px;
+        margin:0;
+        padding:0;
+      }
+      /*  end styles for the ContextMenu  */
+
+
       #map-canvas { height: 100% }
+
     </style>
     
     <script type="text/javascript"
-      src="https://maps.googleapis.com/maps/api/js?libraries=drawing&key=AIzaSyAK2rfeeudxNw8JVF_9u3tk9xxXkOe7-Mc&sensor=true">
+      src="https://maps.googleapis.com/maps/api/js?libraries=drawing&key=AIzaSyAK2rfeeudxNw8JVF_9u3tk9xxXkOe7-Mc&sensor=false">
     </script>
     <script type="text/javascript" src="js/third/maplabel-compiled.js"></script>
     <script type="text/javascript" src="js/third/sprintf.min.js"></script>
     <script type="text/javascript" src="js/vendor/jquery-1.9.0.min.js"></script>
+    <script type="text/javascript" src="js/third/sprintf.min.js"></script>
+    <script type="text/javascript" src="http://code.martinpearman.co.uk/googlemapsapi/contextmenu/1.0/src/ContextMenu.js"></script>
     
     
     <script type="text/javascript">
+
       var dbMarkers = [];
+
       var markerLocations = [];
       var selectedMarker;
       var markerMode='tdriver';
       var userMarkerIcon = "http://westminster.boskalis.com/fileadmin/custom/images/marker_icon3.png";
+      var selectedId;
+
       function MyControl(controlName, map) {
         var controlDiv = document.createElement("div");
 
@@ -63,7 +97,15 @@
         }
       }
 
+      var contextMenuOptions={};
+      var menuItems=[];
+      menuItems.push({className:'context_menu_item', eventName:'call_taxi', label:'Call Taxi'});
+      menuItems.push({className:'context_menu_item', eventName:'zoom_out_click', label:'Zoom out'});
+      contextMenuOptions.menuItems=menuItems;
+      var contextMenu;
+
       function initialize() {
+        
         var mapOptions = {
           center: new google.maps.LatLng(-12.087583,-77.035103),
           zoom: 14,
@@ -71,6 +113,47 @@
         };
         var map = new google.maps.Map(document.getElementById("map-canvas"),
             mapOptions);
+
+
+        contextMenu = new ContextMenu(map, contextMenuOptions);
+
+        google.maps.event.addListener(contextMenu, 'menu_item_selected', function(latLng, eventName){
+        //  latLng is the position of the ContextMenu
+        //  eventName is the eventName defined for the clicked ContextMenuItem in the ContextMenuOptions
+        switch(eventName){
+          case 'call_taxi':
+              
+              var marker = dbMarkers[selectedId];
+
+              var userId = "u="+marker.title.substring(1);
+              var lat = "la="+marker.position.jb;
+              var lng = "ln="+marker.position.kb;
+              var address = 'a=Some Address';
+              var reference='r=reference';
+              if($("#call>div>div>strong").html()=='call'){
+                  $.ajax({ 
+                    url: "users/start_ride",
+                    type:'POST',
+                    data:userId+"&"+lat+"&"+lng+"&"+address+"&"+reference,
+                    success: function(data){
+                        console.log("ride_id="+data);
+                    }, dataType: "json"});
+              }else{
+
+              }
+
+            break;
+          case 'zoom_out_click':
+            map.setZoom(map.getZoom()-1);
+            break;
+          case 'center_map_click':
+            map.panTo(latLng);
+            break;
+        }
+      });
+
+
+        console.log(contextMenu);
         // var drawingManager = new google.maps.drawing.DrawingManager();
         var drawingManager = new google.maps.drawing.DrawingManager({
           // drawingMode: google.maps.drawing.OverlayType.MARKER,
@@ -94,78 +177,93 @@
             editable: true
           }
         });
-          var clearTDriversControl = new MyControl('clear tdrivers', map);
-          var clearUsersControl = new MyControl('clear users', map);
-          var closestMarkersControl = new MyControl('get closest', map);
-          var tdriver_usertoggle = new MyControl('tdriver', map);
-          google.maps.event.addDomListener(tdriver_usertoggle, 'click', function() {
-              markerMode=(markerMode=='tdriver')?'passenger':'tdriver';
-              $("#tdriver>div>div>strong").html(markerMode);
-              // console.log(("#"+markerMode+">div>div>strong").html());
-          });
-          google.maps.event.addDomListener(clearTDriversControl, 'click', function() {
-              $.ajax({
-                url: "tdrivers/clear_locations",
-                context: document.body
-              }).done(function() {
-                console.log("successfully cleared");
-              });
-          });
-          google.maps.event.addDomListener(clearUsersControl, 'click', function() {
-              $.ajax({
-                url: "users/clear_locations",
-                context: document.body
-              }).done(function(data) {
-                console.log(data+" successfully cleared");
-              });
-          });
-          
 
-          google.maps.event.addDomListener(closestMarkersControl, 'click', function() {
-              $.ajax({
-                url: "tdrivers/get_closest",
-                context: document.body,
-                type:"POST",
-                data:"selectedPoint="+JSON.stringify({
-                  'tdriver_id':selectedMarker.title,
-                  'lat':selectedMarker.position.jb,
-                  'lng':selectedMarker.position.kb
-                })
-              }).done(function(data) {
-                console.log(data);
-                console.log(data.length);
-                for (var i = 0; i < data.length; i++) {
-                  var radius=data[i]['distance']/2;
-                  console.log('distance = '+data[i]['distance']);
-                  console.log('radius = '+data[i]['distance']/2);
-                  console.log('angle='+data[i]['angle']);
-                  var lat = (dbMarkers[data[i]["from"]].position.jb + dbMarkers[data[i]["to"]].position.jb)/2;
-                  var lng = (dbMarkers[data[i]["from"]].position.kb + dbMarkers[data[i]["to"]].position.kb)/2;
-                  console.log(lat);
-                  console.log(lng);
-                  
-                  var flightPlanCoordinates = [
-                    new google.maps.LatLng(dbMarkers[data[i]["from"]].position.jb, dbMarkers[data[i]["from"]].position.kb),
-                    new google.maps.LatLng(dbMarkers[data[i]["to"]].position.jb, dbMarkers[data[i]["to"]].position.kb)
-                  ];
-                  var flightPath = new google.maps.Polyline({
-                    path: flightPlanCoordinates,
-                    strokeColor: '#FF0000',
-                    strokeOpacity: 1.0,
-                    strokeWeight: 2,
-                    map:map
-                  });
-                  var mapLabel = new MapLabel({
-                     text: getPrettyDistance(data[i]['distance']),
-                     position: new google.maps.LatLng(lat,lng),
-                     map: map,
-                     fontSize: 16,
-                     align: 'center'
-                   });
-                };
-                console.log("successfully sent");
-              });
-          });
+        
+
+
+
+        var clearTDriversControl = new MyControl('clear tdrivers', map);
+        var clearUsersControl = new MyControl('clear users', map);
+        var closestMarkersControl = new MyControl('get closest', map);
+        var tdriver_usertoggle = new MyControl('tdriver', map);
+        var callTaxi = new MyControl('call', map);
+
+
+        google.maps.event.addDomListener(callTaxi, 'click', function() {
+            var markerMode=($("#call>div>div>strong").html()=='call')?'dontcall':'call';
+            $("#call>div>div>strong").html(markerMode);
+            // console.log(("#"+markerMode+">div>div>strong").html());
+        });
+
+        google.maps.event.addDomListener(tdriver_usertoggle, 'click', function() {
+          var ob= $("#tdriver>div>div>strong");
+          var markerMode=(ob.html()=='tdriver')?'passenger':'tdriver';
+          ob.html(markerMode);
+            // console.log(("#"+markerMode+">div>div>strong").html());
+        });
+        google.maps.event.addDomListener(clearTDriversControl, 'click', function() {
+            $.ajax({
+              url: "tdrivers/clear_locations",
+              context: document.body
+            }).done(function() {
+              console.log("successfully cleared");
+            });
+        });
+        google.maps.event.addDomListener(clearUsersControl, 'click', function() {
+            $.ajax({
+              url: "users/clear_locations",
+              context: document.body
+            }).done(function(data) {
+              console.log(data+" successfully cleared");
+            });
+        });
+        
+
+        google.maps.event.addDomListener(closestMarkersControl, 'click', function() {
+            $.ajax({
+              url: "tdrivers/get_closest",
+              context: document.body,
+              type:"POST",
+              data:"selectedPoint="+JSON.stringify({
+                'selected_id':selectedMarker.title,
+                'lat':selectedMarker.position.jb,
+                'lng':selectedMarker.position.kb
+              })
+            }).done(function(data) {
+              console.log(data);
+              console.log(data.length);
+              for (var i = 0; i < data.length; i++) {
+                var radius=data[i]['distance']/2;
+                console.log('distance = '+data[i]['distance']);
+                console.log('radius = '+data[i]['distance']/2);
+                console.log('angle='+data[i]['angle']);
+                var lat = (dbMarkers[data[i]["from"]].position.jb + dbMarkers[data[i]["to"]].position.jb)/2;
+                var lng = (dbMarkers[data[i]["from"]].position.kb + dbMarkers[data[i]["to"]].position.kb)/2;
+                console.log(lat);
+                console.log(lng);
+                
+                var flightPlanCoordinates = [
+                  new google.maps.LatLng(dbMarkers[data[i]["from"]].position.jb, dbMarkers[data[i]["from"]].position.kb),
+                  new google.maps.LatLng(dbMarkers[data[i]["to"]].position.jb, dbMarkers[data[i]["to"]].position.kb)
+                ];
+                var flightPath = new google.maps.Polyline({
+                  path: flightPlanCoordinates,
+                  strokeColor: '#FF0000',
+                  strokeOpacity: 1.0,
+                  strokeWeight: 2,
+                  map:map
+                });
+                var mapLabel = new MapLabel({
+                   text: getPrettyDistance(data[i]['distance']),
+                   position: new google.maps.LatLng(lat,lng),
+                   map: map,
+                   fontSize: 16,
+                   align: 'center'
+                 });
+              };
+              console.log("successfully sent");
+            });
+        });
 
 
           google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
@@ -217,8 +315,9 @@
 
           $.ajax({
             url: "users/everyone_locations",
-            context: document.body,
-            data:"ola" 
+            context: this,
+            data:"ola"
+
           }).done(function(data) {
             loadData(data, map);
 
@@ -235,9 +334,62 @@
 
           });
         
-        drawingManager.setMap(map);
+     
 
+        drawingManager.setMap(map);
       }
+
+       var loadData = function(data, map){
+        if(data==null) return;
+        for (var i = 0;  i<data.length; i++) {
+          var marker = new google.maps.Marker({
+                position: new google.maps.LatLng(data[i].lat, data[i].lng),
+                map:map,
+                title:""+data[i].id
+            });
+          if(data[i].id.indexOf('u')==0){
+           marker.setIcon(userMarkerIcon);
+          }else{
+            
+          } 
+          google.maps.event.addListener(marker, 'click', markerClickEvent);
+                  //  display the ContextMenu on a Map right click
+          google.maps.event.addListener(marker, 'rightclick', markerRightClickEvent);
+
+          dbMarkers[data[i].id]=marker;
+        };
+        console.log(dbMarkers);
+      }
+
+
+      var markerRightClickEvent = function(event){
+        console.log(event);
+        console.log(this);
+        selectedId = this.title;
+        console.log(selectedId);
+        contextMenu.show(event.latLng);
+      }
+
+      var markerClickEvent = function(event) {
+        console.log(this);
+        console.log(event);
+        if(this.title.indexOf('u')==0){
+          
+        }else{
+          if(selectedMarker!=null){
+            selectedMarker.setIcon(null);
+            selectedMarker.setAnimation(null);
+
+            selectedMarker=this;
+          }else{
+            selectedMarker=this;
+          }
+
+          this.setIcon("http://s7.postimg.org/wg6bu3jpj/pointer.png");
+          this.setAnimation(google.maps.Animation.BOUNCE);
+        }   
+      }
+
       function refreshPositions(data, map){
         if(data==null) return;
         for (var i = 0;  i<data.length; i++) {
@@ -275,42 +427,6 @@
               moveMarker(id);
             }, delay);
         }
-      }
-
-      function loadData(data, map){
-        if(data==null) return;
-        for (var i = 0;  i<data.length; i++) {
-          var marker = new google.maps.Marker({
-                position: new google.maps.LatLng(data[i].lat, data[i].lng),
-                map:map,
-                title:""+data[i].id
-            });
-          if(data[i].id.indexOf('u')==0){
-           marker.setIcon(userMarkerIcon);
-          }else{
-            
-          } 
-          google.maps.event.addListener(marker, 'click', markerClickEvent);
-          dbMarkers[data[i].id]=marker;
-        };
-        console.log(dbMarkers);
-      }
-
-      var markerClickEvent = function(event) {
-            console.log(this);
-            
-            if(selectedMarker!=null){
-              selectedMarker.setIcon(null);
-              selectedMarker.setAnimation(null);
-
-              selectedMarker=this;
-            }else{
-              selectedMarker=this;
-            }
-
-            this.setIcon("http://s7.postimg.org/wg6bu3jpj/pointer.png");
-            this.setAnimation(google.maps.Animation.BOUNCE);
-                
       }
       google.maps.event.addDomListener(window, 'load', initialize);
     </script>

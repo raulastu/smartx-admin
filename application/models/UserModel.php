@@ -54,5 +54,57 @@ class UserModel extends CI_Model {
 		return $this->db->affected_rows();
 	}
 
+	function getUserRide($userId){
+		$sql = "SELECT a.lat, a.lng, t.request_date FROM taxi_rides t JOIN user_addresses a using(user_id) 
+		WHERE user_id = ? AND ";
+		$query = $this->db->query($sql,array($userId));
+		return $query->result();
+	}
+
+	function startRide($userId, $originAddressId){
+		$sql = "INSERT INTO  taxi_rides(user_id, origin_address_id, request_date, status)
+			VALUES (?,?, NOW(), 1)";
+		$query = $this->db->query($sql,array($userId, $originAddressId));
+		$lastInsertId = $this->db->insert_id();
+
+		$LatLng = $this->getLatLngFromUserAddress($originAddressId);
+		// print_r($LatLng);
+		$sql = "INSERT INTO  ride_events(ride_id, lat, lng, type, reg_date)
+			VALUES (?,?,?, 1,NOW())";
+		$query = $this->db->query($sql,array($lastInsertId, $LatLng->lat, $LatLng->lng));
+		return $lastInsertId;
+	}
+
+	function getLatLngFromUserAddress($userAddressId){
+		$sql = "SELECT lat, lng FROM user_addresses WHERE address_id = ?";
+		$query = $this->db->query($sql,array($userAddressId));
+		return $query->row();
+	}
+	//
+	function getUserAddress($addressId){
+		$sql = "SELECT address, reference, lat, lng, FROM user_addresses
+		WHERE address_id = ?";
+		$query = $this->db->query($addressId);
+		return $query->result();
+	}
+	function createUserAddress($address, $reference, $lat, $lng, $userId){
+		$sql = "INSERT INTO  user_addresses(address, reference, lat, lng, reg_date, creator_user_id)
+			VALUES (?,?,?,?, NOW(),?)";
+		$query = $this->db->query($sql,array($address, $reference, $lat, $lng, $userId));
+		return $lastInsertId = $this->db->insert_id();;
+	}
+
+	function updateUserAddress($addressId, $address, $reference, $lat, $lng){
+		$sql = "UPDATE  user_addresses
+		SET address = ?
+		reference = ?,
+		lat = ?,
+		lng = ?,
+		reg_date = NOW()
+		WHERE address_id = ?";
+		$query = $this->db->query(array($address, $reference, $lat, $lng, $addressId));
+		return $addressId;
+	}
+
 
 }

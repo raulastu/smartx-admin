@@ -35,7 +35,34 @@ class Users extends CI_Controller {
 		echo "u".$this->UserModel->createNewUser($newLocationsArray);
 	}
 
+	public function start_ride(){
+		$userId = $this->input->post('u');
+		$userAddressId = $this->input->post('i');
+		if($userAddressId!=null){
+			$address = $this->input->post('a');
 
+			if($address==null){
+				//Use existing address
+				// Do nothing
+			}else{
+				//Modify existing address
+				$reference = $this->input->post('r');
+				$Lat = $this->input->post('la');
+				$Lng = $this->input->post('ln');
+				$userAddressId = $this->UserModel->updateUserAddress($userAddressId, $address, $reference, $lat, $lng);
+			}
+		}else{
+			//Brand new address
+			$address = $this->input->post('a');
+			$reference = $this->input->post('r');
+			$lat = $this->input->post('la');
+			$lng = $this->input->post('ln');
+			$userAddressId = $this->UserModel->createUserAddress($address, $reference, $lat, $lng, $userId);
+		}
+		
+		// print_r($newLocationsArray);
+		echo $this->UserModel->startRide($userId, $userAddressId);	
+	}
 	public function update_driver_location()
 	{
 		$data = $this->input->post('data');

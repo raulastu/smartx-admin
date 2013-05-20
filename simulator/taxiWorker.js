@@ -20,7 +20,7 @@ var factor=1000;
 
 function init(){
 	setInterval(function(){
-		var si=Math.round(Math.random()*3);
+		var si=Math.floor(Math.random()*4);
 		var distance = Math.random()*5;
 		var newlat = lat+di[si]*distance/factor;
 		var newlng = lng+dj[si]*distance/factor;
