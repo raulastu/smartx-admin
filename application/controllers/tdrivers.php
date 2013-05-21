@@ -23,7 +23,7 @@ class TDrivers extends CI_Controller {
 		$newLocations = $this->input->post('data');
 		
 		$newLocationsArray = json_decode($newLocations);
-		echo 'd'.$this->TDriverModel->createNewTDriver($newLocationsArray);
+		echo $this->TDriverModel->createNewTDriver($newLocationsArray);
 
 	}
 

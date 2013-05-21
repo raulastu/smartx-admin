@@ -21,7 +21,7 @@ var factor=1000;
 function init(){
 	setInterval(function(){
 		var si=Math.floor(Math.random()*4);
-		var distance = Math.random()*5;
+		var distance = Math.random()*6;
 		var newlat = lat+di[si]*distance/factor;
 		var newlng = lng+dj[si]*distance/factor;
 		self.postMessage("Hello from "+tdriver_id+ " at "+lat+" "+lng);

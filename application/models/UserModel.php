@@ -17,6 +17,14 @@ class UserModel extends CI_Model {
 		return $query->result()->user_id;
 	}
 
+	function clearRequestPolls(){
+		$sql = "DELETE FROM ride_request_polls";
+		$query = $this->db->query($sql);
+		$sql = "DELETE FROM taxi_rides";
+		$query = $this->db->query($sql);
+		return $this->db->affected_rows();
+	}
+
 	function getUserLocations(){
 		$sql = "SELECT user_id as id, lat, lng FROM user_latest_locations";
 		$query = $this->db->query($sql);

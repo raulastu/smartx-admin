@@ -3,7 +3,9 @@
       var dbMarkers = [];
       var ridesStore = [];
 
-      var markerLocations = [];
+      var markerLatLng = [];
+      var loadedTDrivers = [];
+
       var selectedMarker;
       var markerMode='tdriver';
       var userMarkerIcon = "http://westminster.boskalis.com/fileadmin/custom/images/marker_icon3.png";
@@ -58,10 +60,10 @@
       var contextMenu;
 
       function initialize() {
-        
+        // google.maps.visualRefresh=true;
         var mapOptions = {
           center: new google.maps.LatLng(-12.087583,-77.035103),
-          zoom: 14,
+          zoom: 13,
           mapTypeId: google.maps.MapTypeId.ROADMAP
         };
         var map = new google.maps.Map(document.getElementById("map-canvas"),
@@ -83,17 +85,14 @@
               var lng = "ln="+marker.position.kb;
               var address = 'a=Some Address';
               var reference='r=reference';
-              if($("#call>div>div>strong").html()=='call'){
-                  $.ajax({ 
+              $.ajax({ 
                     url: "users/start_ride",
                     type:'POST',
                     data:userId+"&"+lat+"&"+lng+"&"+address+"&"+reference,
                     success: function(data){
-                        console.log(data);
+                      console.log("users/start_ride");
+                      console.log(data);
                     }, dataType: "json"});
-              }else{
-
-              }
 
             break;
           case 'zoom_out_click':
@@ -136,13 +135,17 @@
         var clearUsersControl = new MyControl('clear users', map);
         var closestMarkersControl = new MyControl('get closest', map);
         var tdriver_usertoggle = new MyControl('tdriver', map);
-        var callTaxi = new MyControl('call', map);
+        var clearRideRequestsControll = new MyControl('clear-ride-requests', map);
 
 
-        google.maps.event.addDomListener(callTaxi, 'click', function() {
-            var markerMode=($("#call>div>div>strong").html()=='call')?'dontcall':'call';
-            $("#call>div>div>strong").html(markerMode);
-            // console.log(("#"+markerMode+">div>div>strong").html());
+        google.maps.event.addDomListener(clearRideRequestsControll, 'click', function() {
+            $.ajax({
+              url: "users/clear_rides_requests",
+              context: document.body
+            }).done(function(data) {
+              console.log('users/clear_rides_requests');
+              console.log(data);
+            });
         });
 
         google.maps.event.addDomListener(tdriver_usertoggle, 'click', function() {
@@ -187,6 +190,7 @@
                 console.log('distance = '+data[i]['distance']);
                 console.log('radius = '+data[i]['distance']/2);
                 var toMarker = dbMarkers['d'+data[i]["to"]];
+                // var fromMarker = dbMarkers['d'+data[i]["to"]];
                 var lat = (dbMarkers[data[i]["from"]].position.jb + toMarker.position.jb)/2;
                 var lng = (dbMarkers[data[i]["from"]].position.kb + toMarker.position.kb)/2;
                 console.log(lat);
@@ -215,12 +219,15 @@
             });
         });
 
-
+          //CREATE MARKER
           google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
             console.log(event);
             if (event.type == google.maps.drawing.OverlayType.MARKER) {
               
-              var latlng = new Array(event.overlay.position.jb+"", event.overlay.position.kb+"");
+              
+              var lat = event.overlay.position.jb;
+              var lng = event.overlay.position.kb;
+              var latlng = [lat, lng];
               console.log("sending "+ latlng);
               if($("#tdriver>div>div>strong").html()=='tdriver'){
                 $.ajax({
@@ -228,11 +235,14 @@
                   context: document.body,
                   type:"POST",
                   data:"data="+JSON.stringify(latlng)
-                }).done(function(data) {
+                }).done(function(returnedId) {
                   console.log("tdriver created");
-                  console.log(data);
-                  event.overlay.setTitle(data)
-                  dbMarkers[data] = event.overlay;
+                  console.log(returnedId);
+                  event.overlay.setTitle(returnedId)
+                  dbMarkers['d'+returnedId] = event.overlay;
+                  loadedTDrivers[returnedId]=[];
+                  loadedTDrivers[returnedId]['lat']=lat;
+                  loadedTDrivers[returnedId]['lng']=lng;
                 });
                 google.maps.event.addListener(event.overlay, 'click', markerClickEvent);
               }else{
@@ -249,7 +259,7 @@
                   dbMarkers[data] = event.overlay;
                 });
 	          	google.maps.event.addListener(event.overlay, 'click', markerClickEvent);
-		        google.maps.event.addListener(event.overlay, 'rightclick', markerRightClickEvent);
+		          google.maps.event.addListener(event.overlay, 'rightclick', markerRightClickEvent);
               }
             }
           });
@@ -296,6 +306,7 @@
         console.log(data);
         var users = data.users;
         var tdrivers = data.tdrivers;
+        
         for (var i = 0;  i<users.length; i++) {
         	var uid='u'+users[i].id;
           var marker = new google.maps.Marker({
@@ -307,45 +318,50 @@
           google.maps.event.addListener(marker, 'click', markerClickEvent);
           google.maps.event.addListener(marker, 'rightclick', markerRightClickEvent);
           dbMarkers[uid]=marker;
+
+          // markerLatLng[uid]=[];
+          // markerLatLng[uid]['lat']=
         };
+        loadedTDrivers = [];
         for (var i = 0;  i<tdrivers.length; i++) {
         	var did='d'+tdrivers[i].id;
-			var marker = new google.maps.Marker({
-				position: new google.maps.LatLng(tdrivers[i].lat, tdrivers[i].lng),
-				map:map,
-				title:did
-			});
-			google.maps.event.addListener(marker, 'click', markerClickEvent);
-			google.maps.event.addListener(marker, 'rightclick', markerRightClickEvent);
-			dbMarkers[did]=marker;
+          var marker = new google.maps.Marker({
+    				position: new google.maps.LatLng(tdrivers[i].lat, tdrivers[i].lng),
+    				map:map,
+    				title:did
+    			});
+    			google.maps.event.addListener(marker, 'click', markerClickEvent);
+    			google.maps.event.addListener(marker, 'rightclick', markerRightClickEvent);
+    			dbMarkers[did]=marker;
+          loadedTDrivers[tdrivers[i].id]=tdrivers[i];
         };
 
 
-        // var rides = data.rides;
-        // // if(rides!=null){}
-        // for(var i = 0 ; i<rides.length; i++){
-        //   var tdriverLat=dbMarkers['d'+rides[i].tdriver_id].position.jb;
-        //   var tdriverLng=dbMarkers['d'+rides[i].tdriver_id].position.kb;
-        //   var userLat=dbMarkers['u'+rides[i].user_id].position.jb;
-        //   var userLng=dbMarkers['u'+rides[i].user_id].position.kb;
-        //   var flightPlanCoordinates = [
-        //         new google.maps.LatLng(userLat, userLng),
-        //         new google.maps.LatLng(tdriverLat, tdriverLng)
-        //       ];
-        //   var flightPath = new google.maps.Polyline({
-        //     path: flightPlanCoordinates,
-        //     strokeColor: 'indigo',
-        //     strokeOpacity: 1.0,
-        //     strokeWeight: 2,
-        //     map:map
-        //   });
+        var rides = data.rides;
+        // if(rides!=null){}
+        for(var i = 0 ; i<rides.length; i++){
+          var tdriverLat=dbMarkers['d'+rides[i].tdriver_id].position.jb;
+          var tdriverLng=dbMarkers['d'+rides[i].tdriver_id].position.kb;
+          var userLat=dbMarkers['u'+rides[i].user_id].position.jb;
+          var userLng=dbMarkers['u'+rides[i].user_id].position.kb;
+          var flightPlanCoordinates = [
+                new google.maps.LatLng(userLat, userLng),
+                new google.maps.LatLng(tdriverLat, tdriverLng)
+              ];
+          var flightPath = new google.maps.Polyline({
+            path: flightPlanCoordinates,
+            strokeColor: 'indigo',
+            strokeOpacity: 1.0,
+            strokeWeight: 2,
+            map:map
+          });
 
-        //   if(ridesStore['d'+rides[i].tdriver_id]==null)
-        //   	ridesStore['d'+rides[i].tdriver_id]=[];
-        //   ridesStore['d'+rides[i].tdriver_id]['u'+rides[i].user_id]=flightPath;
-        //   console.log(ridesStore);
-        //   console.log(flightPath.getPath());
-        // }
+          if(ridesStore['d'+rides[i].tdriver_id]==null)
+          	ridesStore['d'+rides[i].tdriver_id]=[];
+          ridesStore['d'+rides[i].tdriver_id]['u'+rides[i].user_id]=flightPath;
+          console.log(ridesStore);
+          console.log(flightPath.getPath());
+        }
         // console.log(dbMarkers);
       }
 
@@ -379,7 +395,7 @@
         var newRides = data.rides;
 
         var arrayStoreTemp=[];
-		var newcreated=0;
+		    var newcreated=0;
         for(var i=0; i<newRides.length; i++){
         	var did='d'+newRides[i].tdriver_id;
         	var uid='u'+newRides[i].user_id;
@@ -387,15 +403,15 @@
         	if(ridesStore[did]!=null){
         		if(ridesStore[did][uid]!=null){
         			if(arrayStoreTemp[did]==null)
-						arrayStoreTemp[did]=[];
+						  arrayStoreTemp[did]=[];
         			arrayStoreTemp[did][uid]=ridesStore[did][uid];
-        			// ridesStore[did][uid]=undefined;
+        			delete ridesStore[did][uid];
         		}else{
         			//create new
         			var tdriverLat=dbMarkers[did].position.jb;
-					var tdriverLng=dbMarkers[did].position.kb;
-					var userLat=dbMarkers[uid].position.jb;
-					var userLng=dbMarkers[uid].position.kb;
+    					var tdriverLng=dbMarkers[did].position.kb;
+    					var userLat=dbMarkers[uid].position.jb;
+    					var userLng=dbMarkers[uid].position.kb;
 		         	var flightPlanCoordinates = [
 		                new google.maps.LatLng(userLat, userLng),
 		                new google.maps.LatLng(tdriverLat, tdriverLng)
@@ -411,10 +427,10 @@
 			        newcreated++;
         		}
         	}else{
-				var tdriverLat=dbMarkers[did].position.jb;
-				var tdriverLng=dbMarkers[did].position.kb;
-				var userLat=dbMarkers[uid].position.jb;
-				var userLng=dbMarkers[uid].position.kb;
+    				var tdriverLat=dbMarkers[did].position.jb;
+    				var tdriverLng=dbMarkers[did].position.kb;
+    				var userLat=dbMarkers[uid].position.jb;
+    				var userLng=dbMarkers[uid].position.kb;
 	         	var flightPlanCoordinates = [
 	                new google.maps.LatLng(userLat, userLng),
 	                new google.maps.LatLng(tdriverLat, tdriverLng)
@@ -427,11 +443,17 @@
 		            map:map
 		        });
 
-				if(arrayStoreTemp[did]==null)
-					arrayStoreTemp[did]=[];
-				arrayStoreTemp[did][uid]=flightPath;
-				newcreated++;
+  				if(arrayStoreTemp[did]==null)
+  					arrayStoreTemp[did]=[];
+  				arrayStoreTemp[did][uid]=flightPath;
+  				newcreated++;
         	}
+        }
+        for(var did in ridesStore){
+          for(var uid in ridesStore[did]){
+            ridesStore[did][uid].setMap(null);
+            console.log(ridesStore[did][uid]);
+          }
         }
         console.log("newcreated "+newcreated);
         console.log(arrayStoreTemp);
@@ -440,12 +462,21 @@
         var tdrivers = data.tdrivers;
         // if(tdrivers)
         for (var i = 0;  i<tdrivers.length; i++) {
-        	var uiId='d'+tdrivers[i].id;
-	          var fromLat = dbMarkers[uiId].position.jb;
-	          var fromLng = dbMarkers[uiId].position.kb;
+        	   var uiId='d'+tdrivers[i].id;
+	          var fromLat = loadedTDrivers[tdrivers[i].id].lat;
+	          var fromLng = loadedTDrivers[tdrivers[i].id].lng;
 	          var toLat=tdrivers[i].lat;
 	          var toLng=tdrivers[i].lng;
-	          transition(uiId, fromLat, fromLng, toLat, toLng);
+
+            if(fromLat!=toLat || fromLng!=toLng){
+              console.log("changed markers");
+              loadedTDrivers[tdrivers[i].id].lat=toLat;
+              loadedTDrivers[tdrivers[i].id].lng=toLng;
+              // console.log(parseFloat(fromLat)+" "+parseFloat(fromLng));
+              // console.log((toLat)+" "+(toLng));
+              transition(uiId, fromLat, fromLng, toLat, toLng);
+            }
+	           
         };
       }
       
@@ -455,11 +486,11 @@
           deltaLng[id] = (toLng - fromLng)/numDeltas;
           moveMarker(id);
       }
-      var numDeltas=120;
+      var numDeltas=40;
       var deltaLat=[];
       var deltaLng=[];
       var currentDelta=[];
-      var delay=10;
+      var delay=40;
 
       function moveMarker(id){
         // id=50;
@@ -472,7 +503,7 @@
         
 
         if(ridesStore[id]!=null){
-        	// console.log(ridesStore[id]);
+        	// console.log(1);
 	        for(var uid in ridesStore[id]){
 	        	var a = [ridesStore[id][uid].getPath().getAt(0),latlng];
 	        	ridesStore[id][uid].setPath(a);

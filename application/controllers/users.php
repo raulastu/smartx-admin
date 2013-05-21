@@ -10,26 +10,10 @@ class Users extends CI_Controller {
 
 	public function everyone_locations()
 	{
-		// $locations = $this->UserModel->getEveryoneLocations();
 		$users = $this->UserModel->getUserLocations();
 		$tdrivers = $this->TDriverModel->getTDriverLocations();
-		// print_r($users);
 		$rideRequestPolls = $this->UserModel->getRideRequestPolls();
-		// print_r($rideRequestPolls);
 		$tempArr=array();
-		// $tempTdriverId=null;
-		// for ($i=0; $i <count($rideRequestPolls) ; $i++) { 
-		// 	if($tempTdriverId==null){
-		// 		$tempTdriverId=$rideRequestPolls[$i]->tdriver_id;
-		// 	}else{
-		// 		if($rideRequestPolls[$i]->tdriver_id!=$tempTdriverId){
-		// 			$tdrivers[$tempTdriverId]->ride_requests=$tempArr;
-		// 			$tempTdriverId=$rideRequestPolls[$i]->tdriver_id;
-		// 		}else{
-		// 			array_push($tempArr, (object)array("ride_id"=>$rideRequestPolls[$i]->ride_id, "status"=>$rideRequestPolls[$i]->status));
-		// 		}
-		// 	}
-		// }
 		$res = (object)array("users"=>$users, "tdrivers"=>$tdrivers, "rides"=>$rideRequestPolls);
 		// print_r($locations);
 		$contents = $this->output
@@ -91,7 +75,7 @@ class Users extends CI_Controller {
 		for ($i=0; $i < $N; $i++) {
 			$location = $locations[$i];
 			$distance = $this->distance($rideInfo->lat, $rideInfo->lng, $location->lat, $location->lng);
-			if($distance<1.0){ // in km
+			if($distance<2.0){ // in km
 				array_push($closestTDriverIds, $location->id);
 			}
 		}
@@ -102,6 +86,11 @@ class Users extends CI_Controller {
 		$contents = $this->output
 	              ->set_content_type('application/json')
 	              ->set_output(json_encode($res));
+	}
+
+	public function clear_rides_requests(){
+		$this->UserModel->clearRequestPolls();
+		echo " rides deleted";
 	}
 
 	public function update_driver_location()
