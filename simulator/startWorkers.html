@@ -22,11 +22,12 @@
               var worker = new Worker('taxiWorker.js');
 
               worker.addEventListener('message', function(e) {
-                console.log('Worker said: ', e.data);
+                console.log('Worker said:');
+                console.log(e.data);
               }, false);
               worker.postMessage({
                 type:'init',
-                tdriver_id:data[i]['tdriver_id'],
+                tdriver_id:data[i]['id'],
                 lat:parseFloat(data[i]['lat']),
                 lng:parseFloat(data[i]['lng'])
               }); // Send data to our worker.

@@ -8,7 +8,7 @@ self.addEventListener('message', function(e) {
 		tdriver_id=e.data.tdriver_id;
 		lat=e.data.lat;
 		lng=e.data.lng;
-		interval=Math.random()*10;
+		interval=Math.random()*20;
 	}
 	init();
   	self.postMessage(tdriver_id+" init with value "+interval);

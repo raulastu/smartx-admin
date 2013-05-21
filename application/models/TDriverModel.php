@@ -7,13 +7,10 @@ class TDriverModel extends CI_Model{
 	}
 
 
-	function getTDriversLocations(){
-		$sql = "SELECT tdriver_id, X(location) as lat, Y(location) as lng FROM tdriver_latest_locations";
+	function getTDriverLocations(){
+		$sql = "SELECT tdriver_id as id, X(location) as lat, Y(location) as lng FROM tdriver_latest_locations";
 		$query = $this->db->query($sql);
-		if ($query->num_rows() > 0){
-			return $query->result();
-		}
-		return null;
+		return $query->result();
 	}
 
 	function updateTDriverLocation($tdriverId, $lat, $lng){

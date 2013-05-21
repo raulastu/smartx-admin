@@ -10,11 +10,31 @@ class Users extends CI_Controller {
 
 	public function everyone_locations()
 	{
-		$locations = $this->UserModel->getEveryoneLocations();
+		// $locations = $this->UserModel->getEveryoneLocations();
+		$users = $this->UserModel->getUserLocations();
+		$tdrivers = $this->TDriverModel->getTDriverLocations();
+		// print_r($users);
+		$rideRequestPolls = $this->UserModel->getRideRequestPolls();
+		// print_r($rideRequestPolls);
+		$tempArr=array();
+		// $tempTdriverId=null;
+		// for ($i=0; $i <count($rideRequestPolls) ; $i++) { 
+		// 	if($tempTdriverId==null){
+		// 		$tempTdriverId=$rideRequestPolls[$i]->tdriver_id;
+		// 	}else{
+		// 		if($rideRequestPolls[$i]->tdriver_id!=$tempTdriverId){
+		// 			$tdrivers[$tempTdriverId]->ride_requests=$tempArr;
+		// 			$tempTdriverId=$rideRequestPolls[$i]->tdriver_id;
+		// 		}else{
+		// 			array_push($tempArr, (object)array("ride_id"=>$rideRequestPolls[$i]->ride_id, "status"=>$rideRequestPolls[$i]->status));
+		// 		}
+		// 	}
+		// }
+		$res = (object)array("users"=>$users, "tdrivers"=>$tdrivers, "rides"=>$rideRequestPolls);
 		// print_r($locations);
 		$contents = $this->output
 		                  ->set_content_type('application/json')
-		                  ->set_output(json_encode($locations));
+		                  ->set_output(json_encode($res));
 		 // echo json_encode($data['tdrivers_locations']);
 	}
 	public function locations()
@@ -64,7 +84,7 @@ class Users extends CI_Controller {
 		// print_r($newLocationsArray);
 		$rideInfo = $this->UserModel->startRide($userId, $userAddressId);
 
-		$locations = $this->TDriverModel->getTDriversLocations();
+		$locations = $this->TDriverModel->getTDriverLocations();
 		$N = count($locations);
 		$closestTDriverIds = array();
 		// print_r($locations);
@@ -72,16 +92,18 @@ class Users extends CI_Controller {
 			$location = $locations[$i];
 			$distance = $this->distance($rideInfo->lat, $rideInfo->lng, $location->lat, $location->lng);
 			if($distance<1.0){ // in km
-				array_push($closestTDriverIds, $location->tdriver_id);
+				array_push($closestTDriverIds, $location->id);
 			}
 		}
 		$this->UserModel->create_initial_request_poll($rideInfo->rideId,$closestTDriverIds);
+		//Send Push Notifications to drivers
 
 		$res= array("rideId"=>$rideInfo->rideId, "assigned_tdrivers"=>$closestTDriverIds);
 		$contents = $this->output
 	              ->set_content_type('application/json')
 	              ->set_output(json_encode($res));
 	}
+
 	public function update_driver_location()
 	{
 		$data = $this->input->post('data');
@@ -100,8 +122,6 @@ class Users extends CI_Controller {
 		echo $this->UserModel->clearUserLocations();
 	}
 
-
-
 	public function get_closest()
 	{
 		$selectedPoint = $this->input->post('selectedPoint');
@@ -110,7 +130,7 @@ class Users extends CI_Controller {
 		$selectedPointLat=$selectedPointArray->lat;
 		$selectedPointLng=$selectedPointArray->lng;
 		// print_r($selectedPoint);
-		$locations = $this->TDriverModel->getTDriversLocations();
+		$locations = $this->TDriverModel->getTDriverLocations();
 		$N = count($locations);
 		$arr = array();
 		// print_r($locations);

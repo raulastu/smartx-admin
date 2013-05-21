@@ -10,7 +10,7 @@ class TDrivers extends CI_Controller {
 
 	public function locations()
 	{
-		$locations = $this->TDriverModel->getTDriversLocations();
+		$locations = $this->TDriverModel->getTDriverLocations();
 		// print_r($locations);
 		$contents = $this->output
 		                  ->set_content_type('application/json')
@@ -55,25 +55,24 @@ class TDrivers extends CI_Controller {
 		$selectedPointLat=$selectedPointArray->lat;
 		$selectedPointLng=$selectedPointArray->lng;
 		// print_r($selectedPoint);
-		$locations = $this->TDriverModel->getTDriversLocations();
-		$N = count($locations);
+		$driverLocations = $this->TDriverModel->getTDriverLocations();
+		$N = count($driverLocations);
 		$arr = array();
-		// print_r($locations);
+		// print_r($driverLocations);
 		for ($i=0; $i < $N; $i++) {
-			$location = $locations[$i];
-			if('d'.$location->tdriver_id==$selectedPointId)
+			$location = $driverLocations[$i];
+			if($location->id==$selectedPointId)
 				continue;
 			array_push($arr,array(
 					'from'=>$selectedPointId,
-					'to'=>'d'.$location->tdriver_id,
-					'distance'=>$this->distance($selectedPointLat, $selectedPointLng, $location->lat, $location->lng),
-					'angle'=>$this->getAngle($selectedPointLat, $selectedPointLng, $location->lat, $location->lng)
+					'to'=>$location->id,
+					'distance'=>$this->distance($selectedPointLat, $selectedPointLng, $location->lat, $location->lng)
 				)
 			);
 		}
 		$contents = $this->output
 		                  ->set_content_type('application/json')
-		                  ->set_output(json_encode($arr), JSON_NUMERIC_CHECK);
+		                  ->set_output(json_encode($arr));
 		// echo json_encode($arr);
 	}
 

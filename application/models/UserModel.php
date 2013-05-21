@@ -18,22 +18,40 @@ class UserModel extends CI_Model {
 	}
 
 	function getUserLocations(){
-		$sql = "SELECT concat('u',user_id) as id, lat, lng FROM user_latest_locations";
+		$sql = "SELECT user_id as id, lat, lng FROM user_latest_locations";
 		$query = $this->db->query($sql);
-		if ($query->num_rows() > 0){
-			return $query->result();
-		}
-		return null;
+		return $query->result();
+	}
+
+	function getRideRequestPolls(){
+		$sql = "SELECT rrp.ride_id , tr.user_id, rrp.tdriver_id, rrp.status 
+			FROM ride_request_polls rrp JOIN taxi_rides tr using(ride_id) WHERE rrp.status IN (1,2)";
+		$query = $this->db->query($sql);
+		return $query->result();
 	}
 
 	function getEveryoneLocations(){
-		$sql = "SELECT concat('u',user_id) as id, lat, lng FROM user_latest_locations UNION
-			SELECT concat('d',tdriver_id) as id, X(location) as lat, Y(location) as lng FROM tdriver_latest_locations";
-		$query = $this->db->query($sql);
-		if ($query->num_rows() > 0){
-			return $query->result();
-		}
-		return null;
+		// $sql = "SELECT concat('u',user_id) as id, lat, lng FROM user_latest_locations"; 
+		// $query = $this->db->query($sql);
+		// $users = $query->result();
+
+
+		// $driverSql = "SELECT concat('d',tll.tdriver_id) as id, X(tll.location) as lat, Y(tll.location) as lng, 0 as status, 0 as ride_id FROM tdriver_latest_locations tll
+		// 	WHERE (tll.tdriver_id) NOT IN (SELECT tdriver_id FROM ride_request_polls WHERE status IN (1,2))
+		// 	UNION
+		// 	(SELECT concat('d',tll.tdriver_id) as id, X(tll.location) as lat, Y(tll.location) as lng, rrp.status as status, rrp.ride_id as ride_id
+		// 		FROM tdriver_latest_locations tll JOIN ride_request_polls rrp using (tdriver_id) WHERE rrp.status in (1,2))";
+		
+		// $query = $this->db->query($driverSql);
+		// $tdrivers = $query->result();
+		// $res = array();
+		// for ($i=0; $i < count($tdrivers); $i++) {
+		// 	array_push($res, $tdriver_id[$i]->id=>array());
+		// 	if($tdrivers[$i]->status != null){
+		// 		$arr = array();
+		// 	}
+		// }
+		// return (object)array("users"=>$users, "tdrivers"=>$tdrivers);
 	}
 
 	function createNewUser($initialLocation){
