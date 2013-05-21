@@ -5,7 +5,6 @@ class TDrivers extends CI_Controller {
 	{
 		parent::__construct();
 		$this->load->model('TDriverModel');
-		$this->load->model('UserModel');
 	}
 
 	public function locations()
@@ -16,6 +15,12 @@ class TDrivers extends CI_Controller {
 		                  ->set_content_type('application/json')
 		                  ->set_output(json_encode($locations));
 		 // echo json_encode($data['tdrivers_locations']);
+	}
+
+	public function take_ride(){
+		$driverId = $newLocations = $this->input->post('tdriver_id');
+		$rideId = $newLocations = $this->input->post('ride_id');
+		return $this->TDriverlModel->takeRide($driverId, $rideId);
 	}
 
 	public function create_tdriver()

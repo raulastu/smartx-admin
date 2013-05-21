@@ -1,7 +1,8 @@
 
 
       var dbMarkers = [];
-      var ridesStore = [];
+      var rideRequestPolylineStore = [];
+      var rideRequestIdStore = [];
 
       var markerLatLng = [];
       var loadedTDrivers = [];
@@ -10,8 +11,9 @@
       var markerMode='tdriver';
       var userMarkerIcon = "http://westminster.boskalis.com/fileadmin/custom/images/marker_icon3.png";
       var selectedId;
+      var map;
 
-      function MyControl(controlName, map) {
+      function MyControl(controlName) {
         var controlDiv = document.createElement("div");
 
         // Set CSS styles for the DIV containing the control
@@ -66,9 +68,8 @@
           zoom: 13,
           mapTypeId: google.maps.MapTypeId.ROADMAP
         };
-        var map = new google.maps.Map(document.getElementById("map-canvas"),
+        map = new google.maps.Map(document.getElementById("map-canvas"),
             mapOptions);
-
 
         contextMenu = new ContextMenu(map, contextMenuOptions);
 
@@ -103,6 +104,7 @@
 
 
         console.log(contextMenu);
+
         // var drawingManager = new google.maps.drawing.DrawingManager();
         var drawingManager = new google.maps.drawing.DrawingManager({
           // drawingMode: google.maps.drawing.OverlayType.MARKER,
@@ -131,11 +133,11 @@
 
 
 
-        var clearTDriversControl = new MyControl('clear tdrivers', map);
-        var clearUsersControl = new MyControl('clear users', map);
-        var closestMarkersControl = new MyControl('get closest', map);
-        var tdriver_usertoggle = new MyControl('tdriver', map);
-        var clearRideRequestsControll = new MyControl('clear-ride-requests', map);
+        var clearTDriversControl = new MyControl('clear tdrivers');
+        var clearUsersControl = new MyControl('clear users');
+        var closestMarkersControl = new MyControl('get closest');
+        var tdriver_usertoggle = new MyControl('tdriver');
+        var clearRideRequestsControll = new MyControl('clear-ride-requests');
 
 
         google.maps.event.addDomListener(clearRideRequestsControll, 'click', function() {
@@ -276,9 +278,7 @@
 
           $.ajax({
             url: "users/everyone_locations",
-            context: this,
-            data:"ola"
-
+            context: this
           }).done(function(data) {
             console.log(data);
             loadData(data, map);
@@ -299,6 +299,7 @@
      
 
         drawingManager.setMap(map);
+        
       }
 
        var loadData = function(data, map){
@@ -331,7 +332,7 @@
     				title:did
     			});
     			google.maps.event.addListener(marker, 'click', markerClickEvent);
-    			google.maps.event.addListener(marker, 'rightclick', markerRightClickEvent);
+    			google.maps.event.addListener(marker, 'rightclick', tdriverMarkerRightClickEvent);
     			dbMarkers[did]=marker;
           loadedTDrivers[tdrivers[i].id]=tdrivers[i];
         };
@@ -356,10 +357,10 @@
             map:map
           });
 
-          if(ridesStore['d'+rides[i].tdriver_id]==null)
-          	ridesStore['d'+rides[i].tdriver_id]=[];
-          ridesStore['d'+rides[i].tdriver_id]['u'+rides[i].user_id]=flightPath;
-          console.log(ridesStore);
+          if(rideRequestPolylineStore['d'+rides[i].tdriver_id]==null)
+          	rideRequestPolylineStore['d'+rides[i].tdriver_id]=[];
+          rideRequestPolylineStore['d'+rides[i].tdriver_id]['u'+rides[i].user_id]=flightPath;
+          console.log(rideRequestPolylineStore);
           console.log(flightPath.getPath());
         }
         // console.log(dbMarkers);
@@ -371,6 +372,46 @@
         selectedId = this.title;
         console.log(selectedId);
         contextMenu.show(event.latLng);
+      }
+
+      var tdriverMarkerRightClickEvent = function(event){
+
+        console.log(event);
+        console.log(this);
+        selectedId = this.title;
+        console.log(selectedId);
+        // contextMenu.show(event.latLng);
+
+        if(rideRequestPolylineStore[selectedId]==null){
+          return;
+        }
+        var contextMenuOptions={};
+        var menuItems=[];
+        
+        for(var uid in rideRequestPolylineStore[selectedId]){
+          menuItems.push({className:'context_menu_item', eventName:uid, label:uid});  
+        }
+        contextMenuOptions.menuItems=menuItems;
+        contextMenuOptions.callback = function(){
+          this.show(event.latLng);
+        };
+        var tdriverContextMenu = new ContextMenu(this.map, contextMenuOptions);
+
+        google.maps.event.addListener(tdriverContextMenu, 'menu_item_selected', function(latLng, eventName){
+        //  latLng is the position of the ContextMenu
+        //  eventName is the eventName defined for the clicked ContextMenuItem in the ContextMenuOptions
+          var uid=eventName;
+          var rideId=rideRequestIdStore[selectedId][uid];
+          console.log(uid);
+          $.ajax({ 
+            url: "tdrivers/accept_ride",
+            type:'POST',
+            data:"tdriver_id="+selectedId+"&"+"ride_id="+rideId,
+            success: function(data){
+              console.log("users/start_ride");
+              console.log(data);
+            }, dataType: "json"});
+        });
       }
 
       var markerClickEvent = function(event) {
@@ -399,13 +440,18 @@
         for(var i=0; i<newRides.length; i++){
         	var did='d'+newRides[i].tdriver_id;
         	var uid='u'+newRides[i].user_id;
+          var rideRequestId = newRides[i].ride_id;
 
-        	if(ridesStore[did]!=null){
-        		if(ridesStore[did][uid]!=null){
+          if(rideRequestIdStore[did]==null)
+            rideRequestIdStore[did]=[];
+          rideRequestIdStore[did][uid]=rideRequestId;
+
+        	if(rideRequestPolylineStore[did]!=null){
+        		if(rideRequestPolylineStore[did][uid]!=null){
         			if(arrayStoreTemp[did]==null)
-						  arrayStoreTemp[did]=[];
-        			arrayStoreTemp[did][uid]=ridesStore[did][uid];
-        			delete ridesStore[did][uid];
+						    arrayStoreTemp[did]=[];
+        			arrayStoreTemp[did][uid]=rideRequestPolylineStore[did][uid];
+        			delete rideRequestPolylineStore[did][uid];
         		}else{
         			//create new
         			var tdriverLat=dbMarkers[did].position.jb;
@@ -423,7 +469,10 @@
 			            strokeWeight: 2,
 			            map:map
 			        });
-			        arrayStoreTemp[did][uid]=flightPath;
+              if(arrayStoreTemp[did]==null)
+                arrayStoreTemp[did]=[];
+              arrayStoreTemp[did][uid]=flightPath;
+			        
 			        newcreated++;
         		}
         	}else{
@@ -449,15 +498,16 @@
   				newcreated++;
         	}
         }
-        for(var did in ridesStore){
-          for(var uid in ridesStore[did]){
-            ridesStore[did][uid].setMap(null);
-            console.log(ridesStore[did][uid]);
+        //remaining rides should be deleted as they are not present in the server
+        for(var did in rideRequestPolylineStore){
+          for(var uid in rideRequestPolylineStore[did]){
+            rideRequestPolylineStore[did][uid].setMap(null);
+            console.log(rideRequestPolylineStore[did][uid]);
           }
         }
         console.log("newcreated "+newcreated);
         console.log(arrayStoreTemp);
-        ridesStore=arrayStoreTemp;
+        rideRequestPolylineStore=arrayStoreTemp;
 
         var tdrivers = data.tdrivers;
         // if(tdrivers)
@@ -502,11 +552,11 @@
         dbMarkers[id].setPosition(latlng);
         
 
-        if(ridesStore[id]!=null){
+        if(rideRequestPolylineStore[id]!=null){
         	// console.log(1);
-	        for(var uid in ridesStore[id]){
-	        	var a = [ridesStore[id][uid].getPath().getAt(0),latlng];
-	        	ridesStore[id][uid].setPath(a);
+	        for(var uid in rideRequestPolylineStore[id]){
+	        	var a = [rideRequestPolylineStore[id][uid].getPath().getAt(0),latlng];
+	        	rideRequestPolylineStore[id][uid].setPath(a);
 	        }	
         }
         

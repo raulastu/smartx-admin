@@ -6,6 +6,18 @@ class TDriverModel extends CI_Model{
 		$this->load->database();
 	}
 
+	function takeRide($tdriverId, $rideId){
+		$sql = "UPDATE tdriver_request_polls 
+					SET status = 4
+					WHERE ride_id = ?";
+		$query = $this->db->query($sql,array($rideId));
+
+		$sql = "UPDATE tdriver_request_polls 
+					SET status = 2
+					WHERE ride_id = ? AND tdriver_id=?";
+		$query = $this->db->query($sql,array($rideId, $tdriverId));
+		return true;
+	}
 
 	function getTDriverLocations(){
 		$sql = "SELECT tdriver_id as id, X(location) as lat, Y(location) as lng FROM tdriver_latest_locations";

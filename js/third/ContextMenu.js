@@ -18,7 +18,9 @@
 
 function ContextMenu(map, options){
 	options=options || {};
-	
+	this.rc_loaded=false;
+	this.callback=options.callback;
+
 	this.setMap(map);
 	
 	this.classNames_=options.classNames || {};
@@ -26,9 +28,11 @@ function ContextMenu(map, options){
 	this.mapDiv_=map.getDiv();
 	this.menuItems_=options.menuItems || [];
 	this.pixelOffset=options.pixelOffset || new google.maps.Point(10, -5);
+	
 }
 
 ContextMenu.prototype=new google.maps.OverlayView();
+
 
 ContextMenu.prototype.draw=function(){
 	if(this.isVisible_){
@@ -118,6 +122,8 @@ ContextMenu.prototype.onAdd=function(){
 	});
 	
 	this.getPanes().floatPane.appendChild(menu);
+	if(this.callback)
+		this.callback();
 };
 
 ContextMenu.prototype.onRemove=function(){
