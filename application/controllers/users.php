@@ -37,7 +37,7 @@ class Users extends CI_Controller {
 		
 		$newLocationsArray = json_decode($newLocations);
 		// print_r($newLocationsArray);
-		echo "u".$this->UserModel->createNewUser($newLocationsArray);
+		echo $this->UserModel->createNewUser($newLocationsArray);
 	}
 
 	public function start_ride(){
@@ -75,7 +75,7 @@ class Users extends CI_Controller {
 		for ($i=0; $i < $N; $i++) {
 			$location = $locations[$i];
 			$distance = $this->distance($rideInfo->lat, $rideInfo->lng, $location->lat, $location->lng);
-			if($distance<2.0){ // in km
+			if($distance<3.0){ // in km
 				array_push($closestTDriverIds, $location->id);
 			}
 		}
@@ -89,8 +89,8 @@ class Users extends CI_Controller {
 	}
 
 	public function clear_rides_requests(){
-		$this->UserModel->clearRequestPolls();
-		echo " rides deleted";
+		$ridesDeleted = $this->UserModel->clearRequestPolls();
+		echo $ridesDeleted." rides deleted";
 	}
 
 	public function update_driver_location()

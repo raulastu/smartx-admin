@@ -4,14 +4,17 @@
       var rideRequestPolylineStore = [];
       var rideRequestIdStore = [];
 
-      var markerLatLng = [];
+      // var markerLatLng = [];
       var loadedTDrivers = [];
+      var loadedUsers = []
 
       var selectedMarker;
       var markerMode='tdriver';
       var userMarkerIcon = "http://westminster.boskalis.com/fileadmin/custom/images/marker_icon3.png";
       var selectedId;
       var map;
+      var rideRequestPolylineColor = 'cyan';
+      var ridePolylineColor = 'red';
 
       function MyControl(controlName) {
         var controlDiv = document.createElement("div");
@@ -81,9 +84,11 @@
               
               var marker = dbMarkers[selectedId];
 
+              console.log(selectedId);
+
               var userId = "u="+marker.title.substring(1);
-              var lat = "la="+marker.position.jb;
-              var lng = "ln="+marker.position.kb;
+              var lat = "la="+loadedUsers[selectedId.substring(1)].lat;
+              var lng = "ln="+loadedUsers[selectedId.substring(1)].lng;
               var address = 'a=Some Address';
               var reference='r=reference';
               $.ajax({ 
@@ -247,18 +252,23 @@
                   loadedTDrivers[returnedId]['lng']=lng;
                 });
                 google.maps.event.addListener(event.overlay, 'click', markerClickEvent);
+                google.maps.event.addListener(event.overlay, 'rightclick', tdriverMarkerRightClickEvent);
               }else{
                 $.ajax({
                   url: "users/create_user",
                   context: document.body,
                   type:"POST",
                   data:"data="+JSON.stringify(latlng)
-                }).done(function(data) {
+                }).done(function(userReturnedId) {
                   console.log("user created");
-                  console.log(data);
-                  event.overlay.setTitle(data)
+                  console.log(userReturnedId);
+                  event.overlay.setTitle(userReturnedId)
                   event.overlay.setIcon(userMarkerIcon);
-                  dbMarkers[data] = event.overlay;
+
+                  loadedUsers[userReturnedId]=[];
+                  loadedUsers[userReturnedId]['lat']=lat;
+                  loadedUsers[userReturnedId]['lng']=lng;
+                  dbMarkers[userReturnedId] = event.overlay;
                 });
 	          	google.maps.event.addListener(event.overlay, 'click', markerClickEvent);
 		          google.maps.event.addListener(event.overlay, 'rightclick', markerRightClickEvent);
@@ -307,7 +317,7 @@
         console.log(data);
         var users = data.users;
         var tdrivers = data.tdrivers;
-        
+        loadedUsers=[]
         for (var i = 0;  i<users.length; i++) {
         	var uid='u'+users[i].id;
           var marker = new google.maps.Marker({
@@ -319,10 +329,9 @@
           google.maps.event.addListener(marker, 'click', markerClickEvent);
           google.maps.event.addListener(marker, 'rightclick', markerRightClickEvent);
           dbMarkers[uid]=marker;
-
-          // markerLatLng[uid]=[];
-          // markerLatLng[uid]['lat']=
+          loadedUsers[users[i].id]=users[i];
         };
+
         loadedTDrivers = [];
         for (var i = 0;  i<tdrivers.length; i++) {
         	var did='d'+tdrivers[i].id;
@@ -341,6 +350,10 @@
         var rides = data.rides;
         // if(rides!=null){}
         for(var i = 0 ; i<rides.length; i++){
+          var rideStatus = rides[i].status;
+          var poliColor = rideStatus==1?rideRequestPolylineColor:ridePolylineColor;
+
+
           var tdriverLat=dbMarkers['d'+rides[i].tdriver_id].position.jb;
           var tdriverLng=dbMarkers['d'+rides[i].tdriver_id].position.kb;
           var userLat=dbMarkers['u'+rides[i].user_id].position.jb;
@@ -351,7 +364,7 @@
               ];
           var flightPath = new google.maps.Polyline({
             path: flightPlanCoordinates,
-            strokeColor: 'indigo',
+            strokeColor: poliColor,
             strokeOpacity: 1.0,
             strokeWeight: 2,
             map:map
@@ -402,13 +415,13 @@
         //  eventName is the eventName defined for the clicked ContextMenuItem in the ContextMenuOptions
           var uid=eventName;
           var rideId=rideRequestIdStore[selectedId][uid];
-          console.log(uid);
+
+          console.log(latLng.latitude);
           $.ajax({ 
-            url: "tdrivers/accept_ride",
+            url: "tdrivers/take_ride",
             type:'POST',
-            data:"tdriver_id="+selectedId+"&"+"ride_id="+rideId,
+            data:"tdriver_id="+selectedId.substring(1)+"&ride_id="+rideId+"&lat="+latLng.jb+"&lng="+latLng.kb,
             success: function(data){
-              console.log("users/start_ride");
               console.log(data);
             }, dataType: "json"});
         });
@@ -441,6 +454,7 @@
         	var did='d'+newRides[i].tdriver_id;
         	var uid='u'+newRides[i].user_id;
           var rideRequestId = newRides[i].ride_id;
+          var poliColor = newRides[i].status==1?rideRequestPolylineColor:ridePolylineColor;
 
           if(rideRequestIdStore[did]==null)
             rideRequestIdStore[did]=[];
@@ -448,9 +462,12 @@
 
         	if(rideRequestPolylineStore[did]!=null){
         		if(rideRequestPolylineStore[did][uid]!=null){
+              // exists
         			if(arrayStoreTemp[did]==null)
 						    arrayStoreTemp[did]=[];
         			arrayStoreTemp[did][uid]=rideRequestPolylineStore[did][uid];
+              arrayStoreTemp[did][uid].setOptions({strokeColor:poliColor});
+
         			delete rideRequestPolylineStore[did][uid];
         		}else{
         			//create new
@@ -464,7 +481,7 @@
 		              ];
 		          	var flightPath = new google.maps.Polyline({
 			            path: flightPlanCoordinates,
-			            strokeColor: 'indigo',
+			            strokeColor: poliColor,
 			            strokeOpacity: 1.0,
 			            strokeWeight: 2,
 			            map:map
@@ -486,7 +503,7 @@
 	              ];
 	          	var flightPath = new google.maps.Polyline({
 		            path: flightPlanCoordinates,
-		            strokeColor: 'indigo',
+		            strokeColor: poliColor,
 		            strokeOpacity: 1.0,
 		            strokeWeight: 2,
 		            map:map
@@ -509,6 +526,8 @@
         console.log(arrayStoreTemp);
         rideRequestPolylineStore=arrayStoreTemp;
 
+
+        //refresh drivers positions
         var tdrivers = data.tdrivers;
         // if(tdrivers)
         for (var i = 0;  i<tdrivers.length; i++) {

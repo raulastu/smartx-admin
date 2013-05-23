@@ -5,6 +5,7 @@ class TDrivers extends CI_Controller {
 	{
 		parent::__construct();
 		$this->load->model('TDriverModel');
+		$this->load->model('UserModel');
 	}
 
 	public function locations()
@@ -20,7 +21,9 @@ class TDrivers extends CI_Controller {
 	public function take_ride(){
 		$driverId = $newLocations = $this->input->post('tdriver_id');
 		$rideId = $newLocations = $this->input->post('ride_id');
-		return $this->TDriverlModel->takeRide($driverId, $rideId);
+		$actionLat = $newLocations = $this->input->post('lat');
+		$actionLng = $newLocations = $this->input->post('lng');
+		return $this->TDriverModel->takeRide($driverId, $rideId, $actionLat, $actionLng);
 	}
 
 	public function create_tdriver()
@@ -42,12 +45,26 @@ class TDrivers extends CI_Controller {
 		$lng = $data[2];
 
 		// $newLocationsArray = json_decode($newLocations);
-		echo $this->TDriverModel->updateTDriverLocation($tdriverId, $lat, $lng);
+		$locationToGo = $this->TDriverModel->updateTDriverLocation($tdriverId, $lat, $lng);
+		// print_r($locationToGo);
+		if($locationToGo!= null && $this->distance($locationToGo->lat, $locationToGo->lng, $lat, $lng)<=0.02){
+			$this->TDriverModel->startRiding($tdriverId, $locationToGo->ride_id, $lat, $lng);
+			$contents = $this->output
+		                  ->set_content_type('application/json')
+		                  ->set_output(json_encode(array()));
+		}else{
+			$contents = $this->output
+		                  ->set_content_type('application/json')
+		                  ->set_output(json_encode($locationToGo));
+		}
+		
 	}
 
 	public function clear_locations()
 	{
-		echo $this->TDriverModel->clearTDriversLocations();
+		$ridesDeleted = $this->UserModel->clearRequestPolls();
+		$locationsDeleted = $this->TDriverModel->clearTDriversLocations();
+		echo $locationsDeleted;
 	}
 
 
@@ -81,6 +98,7 @@ class TDrivers extends CI_Controller {
 		// echo json_encode($arr);
 	}
 
+	// not working 
 	private function getAngle($lat1, $lon1, $lat2, $lon2){
 		$deltaY = $lat1- $lat2;
 		$deltaX = $lon2 - $lon1;

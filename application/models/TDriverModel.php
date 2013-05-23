@@ -6,17 +6,48 @@ class TDriverModel extends CI_Model{
 		$this->load->database();
 	}
 
-	function takeRide($tdriverId, $rideId){
-		$sql = "UPDATE tdriver_request_polls 
-					SET status = 4
+	function takeRide($tdriverId, $rideId, $lat, $lng){
+		//expire ride for the rest
+		$sql = "UPDATE ride_request_polls 
+					SET status = 5
 					WHERE ride_id = ?";
 		$query = $this->db->query($sql,array($rideId));
 
-		$sql = "UPDATE tdriver_request_polls 
+		//implicitly decline all other ride requests
+		$sql = "UPDATE ride_request_polls 
+					SET status = 4
+					WHERE tdriver_id = ?";
+		$query = $this->db->query($sql,array($tdriverId));
+
+		//take ownership of this ride
+		$sql = "UPDATE ride_request_polls 
 					SET status = 2
 					WHERE ride_id = ? AND tdriver_id=?";
 		$query = $this->db->query($sql,array($rideId, $tdriverId));
+
+		//set ride status to TDRIVER_COMING
+		$sql = "UPDATE taxi_rides
+					SET status = 2
+					WHERE ride_id = ?";
+		$query = $this->db->query($sql,array($rideId));
+
+		$sql = "INSERT INTO ride_events(ride_id, lat, lng, type, tdriver_id, reg_date) 
+				VALUES (?,?,?,2,?,NOW())";
+		$query = $this->db->query($sql,array($rideId, $lat, $lng, $tdriverId));
 		return true;
+	}
+
+	function startRiding($tdriverId, $rideId, $lat, $lng){
+		$sql = "UPDATE taxi_rides
+					SET status = 7
+					WHERE ride_id = ?";
+		$query = $this->db->query($sql,array($rideId));
+
+		$sql = "INSERT INTO ride_events(ride_id, lat, lng, type, tdriver_id, reg_date) 
+				VALUES (?,?,?,7,?,NOW())";
+		$query = $this->db->query($sql,array($rideId, $lat, $lng, $tdriverId));
+
+		return $this->db->affected_rows();
 	}
 
 	function getTDriverLocations(){
@@ -32,7 +63,14 @@ class TDriverModel extends CI_Model{
 
 		$sql = "UPDATE tdriver_latest_locations SET location = POINT(?,?), reg_date = NOW() WHERE tdriver_id = ?";
 		$query = $this->db->query($sql, array($lat, $lng, $tdriverId));
-		return true;
+
+		// return current location to pick up user, if any (used for testing)
+		$sql = "SELECT rrp.ride_id, ua.lat, ua.lng 
+				FROM ride_request_polls rrp JOIN taxi_rides tr using(ride_id) 
+					JOIN user_addresses ua on(tr.origin_address_id = ua.address_id) 
+				WHERE tdriver_id = ? AND rrp.status = 2";
+		$query = $this->db->query($sql, array($tdriverId));
+		return $res = $query->row();
 	}
 
 	function createNewTDriver($initialLocation){

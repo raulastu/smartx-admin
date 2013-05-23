@@ -22,8 +22,8 @@
               var worker = new Worker('taxiWorker.js');
 
               worker.addEventListener('message', function(e) {
-                console.log('Worker said:');
-                console.log(e.data);
+                console.log('Worker '+e.data.id+' said:');
+                console.log(e.data.data);
               }, false);
               worker.postMessage({
                 type:'init',
@@ -33,7 +33,7 @@
               }); // Send data to our worker.
 
               taxiWorker[data[i]['tdriver_id']]=worker;
-              console.log(data[i]['tdriver_id'] + " successfully worker init");
+              // console.log(data[i]['tdriver_id'] + " successfully worker init");
             };
           });
 
