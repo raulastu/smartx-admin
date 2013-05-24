@@ -37,6 +37,8 @@ function init(){
 			distanceInMettersIWouldTravelInSecondsSeconds/=1000;
 			// distanceInMettersIWouldTravelInSecondsSeconds = 10/seconds;	
 			var distanceToUser = distanceFromTwoPoints(lat, lng, pointToGoLat, pointToGoLng);
+
+			//SOME TWEAKING MAY BE NEEDED - sometimes it does not get to the same point as the user is, even though the locations are identical.
 			if(distanceToUser==0){	
 				self.postMessage({id:tdriver_id,data:"Arrived"});
 			}
@@ -44,10 +46,6 @@ function init(){
 			var maxDistanceToTravel = Math.min(distanceToUser,distanceInMettersIWouldTravelInSecondsSeconds);
 			var factorX = (maxDistanceToTravel)/distanceToUser;
 
-			// var minLat= Math.min(lat,pointToGoLat);
-			// var maxLat= Math.max(lat,pointToGoLat);
-			// var minLng= Math.min(lng,pointToGoLng);
-			// var maxLng= Math.max(lng,pointToGoLng);
 			if(factorX==1){
 				newlat=pointToGoLat;
 				newlng=pointToGoLng

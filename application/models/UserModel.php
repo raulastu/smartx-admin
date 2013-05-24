@@ -77,6 +77,15 @@ class UserModel extends CI_Model {
 		return (object)array('rideId'=>$lastInsertId,'lat'=>$origin->lat, 'lng'=>$origin->lng);
 	}
 
+	function updateUserLocation($userId, $lat, $lng){
+
+		$sql = "INSERT INTO user_location_histories (user_id, lat, lng, reg_date) VALUES (?,?,?,NOW())";
+		$query = $this->db->query($sql,array($userId, $lat, $lng));
+
+		$sql = "UPDATE user_latest_locations SET lat =?, lng=?, reg_date = NOW() WHERE user_id = ?";
+		$query = $this->db->query($sql, array($lat, $lng, $userId));
+	}
+
 	function create_initial_request_poll($rideId, $tdriverIdArray){
 		$N = count($tdriverIdArray);
 		if($N==0) return;
@@ -106,6 +115,7 @@ class UserModel extends CI_Model {
 		$query = $this->db->query($addressId);
 		return $query->result();
 	}
+
 	function createUserAddress($address, $reference, $lat, $lng, $userId){
 		$sql = "INSERT INTO  user_addresses(address, reference, lat, lng, reg_date, creator_user_id)
 			VALUES (?,?,?,?, NOW(),?)";
@@ -123,6 +133,12 @@ class UserModel extends CI_Model {
 		WHERE address_id = ?";
 		$query = $this->db->query(array($address, $reference, $lat, $lng, $addressId));
 		return $addressId;
+	}
+	
+	function login($userName){
+		$sql="SELECT user_id FROM users WHERE username = ?";
+		$query = $this->db->query($sql, array($userName));
+		return $query->row();
 	}
 
 

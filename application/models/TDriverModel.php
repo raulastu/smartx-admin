@@ -45,7 +45,7 @@ class TDriverModel extends CI_Model{
 
 		$sql = "INSERT INTO ride_events(ride_id, lat, lng, type, tdriver_id, reg_date) 
 				VALUES (?,?,?,7,?,NOW())";
-		$query = $this->db->query($sql,array($rideId, $lat, $lng, $tdriverId));
+		$query = $this->db->query($sql, array($rideId, $lat, $lng, $tdriverId));
 
 		return $this->db->affected_rows();
 	}

@@ -93,18 +93,6 @@ class Users extends CI_Controller {
 		echo $ridesDeleted." rides deleted";
 	}
 
-	public function update_driver_location()
-	{
-		$data = $this->input->post('data');
-		$data = explode(':',$data);
-		// print_r($data);
-		$tdriverId = $data[0];
-		$lat = $data[1];
-		$lng = $data[2];
-
-		// $newLocationsArray = json_decode($newLocations);
-		echo $this->TDriverModel->updateTDriverLocation($tdriverId, $lat, $lng);
-	}
 
 	public function clear_locations()
 	{
@@ -161,9 +149,23 @@ class Users extends CI_Controller {
 
 
 
-	public function index()
+	public function fakelogin()
 	{
-		echo "ola k ase";
+		$userName = $this->input->post('username');
+		$userId = $this->UserModel->login($userName);
+		$contents = $this->output
+                  ->set_content_type('application/json')
+                  ->set_output(json_encode((object)($userId)));
+	}
+
+	public function update_user_location()
+	{
+		$userId = $this->input->post('userId');
+		$lat = $this->input->post('lat');
+		$lng = $this->input->post('lng');
+		// $newLocationsArray = json_decode($newLocations);
+		$this->UserModel->updateUserLocation($userId, $lat, $lng);
+		echo "updated succesfully";
 	}
 }
 ?>
