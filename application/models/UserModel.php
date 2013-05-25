@@ -32,8 +32,8 @@ class UserModel extends CI_Model {
 	}
 
 	function getRideRequestPolls(){
-		$sql = "SELECT rrp.ride_id , tr.user_id, rrp.tdriver_id, rrp.status 
-			FROM ride_request_polls rrp JOIN taxi_rides tr using(ride_id) WHERE rrp.status IN (1,2)";
+		$sql = "SELECT rrp.ride_id , tr.user_id, rrp.tdriver_id, rrp.status , ua.lat as pickup_lat, ua.lng as pickup_lng
+			FROM ride_request_polls rrp JOIN taxi_rides tr using(ride_id) JOIN user_addresses ua on(tr.origin_address_id=ua.address_id) WHERE rrp.status IN (1,2)";
 		$query = $this->db->query($sql);
 		return $query->result();
 	}

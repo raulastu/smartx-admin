@@ -44,7 +44,7 @@
     <script type="text/javascript" src="js/vendor/jquery-1.9.0.min.js"></script>
     <script type="text/javascript" src="js/third/sprintf.min.js"></script>
     <script type="text/javascript" src="js/third/ContextMenu.js"></script>
-    <script type="text/javascript" src="js/main.js"></script>
+    <script type="text/javascript" src="js/admin_dashboard.js"></script>
   </head>
   <body>
     <div id="map-canvas"/>

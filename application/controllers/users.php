@@ -14,7 +14,57 @@ class Users extends CI_Controller {
 		$tdrivers = $this->TDriverModel->getTDriverLocations();
 		$rideRequestPolls = $this->UserModel->getRideRequestPolls();
 		$tempArr=array();
-		$res = (object)array("users"=>$users, "tdrivers"=>$tdrivers, "rides"=>$rideRequestPolls);
+
+		// print_r($rideRequestPolls);
+		// return;
+		//BEGIN AGGREGATING RIDES 
+		$drivers = array();
+		$rideIdWhichStatusIsOne=null;
+		$rideObject=null;
+		$aggregatedRides = array();
+		for($i = 0 ; $i<count($rideRequestPolls); $i++){
+			if($rideRequestPolls[$i]->status == 1){
+				if($rideIdWhichStatusIsOne==null){
+					$rideObject = $rideRequestPolls[$i];
+					$rideIdWhichStatusIsOne = $rideRequestPolls[$i]->ride_id;
+					$rideObject->assigned_tdrivers=array();
+					array_push($rideObject->assigned_tdrivers, (object)array("tdriver_id"=>$rideRequestPolls[$i]->tdriver_id));
+					unset($rideObject->tdriver_id);
+				}else{
+					//from one state-1 ride to another state-1 ride
+					if($rideIdWhichStatusIsOne!=$rideRequestPolls[$i]->ride_id){
+						array_push($aggregatedRides, $rideObject);
+
+						$rideObject = $rideRequestPolls[$i];
+						$rideIdWhichStatusIsOne = $rideRequestPolls[$i]->tdriver_id;
+						$rideObject->assigned_tdrivers=array();
+						array_push($rideObject->assigned_tdrivers, (object)array("tdriver_id"=>$rideRequestPolls[$i]->tdriver_id));
+						unset($rideObject->tdriver_id);
+					}else{
+						array_push($rideObject->assigned_tdrivers, (object)array("tdriver_id"=>$rideRequestPolls[$i]->tdriver_id));
+					}
+				}
+			}else{
+				//from state-1 to non state-1 ride
+				if($rideIdWhichStatusIsOne!=null){
+					array_push($aggregatedRides, $rideObject);
+					$rideIdWhichStatusIsOne=null;
+					$rideObject=null;
+				}
+				$rideRequestPolls[$i]->assigned_tdrivers=array((object)array("tdriver_id"=>$rideRequestPolls[$i]->tdriver_id));
+				unset($rideRequestPolls[$i]->tdriver_id);
+				array_push($aggregatedRides, $rideRequestPolls[$i]);
+			}
+		}
+		if($rideIdWhichStatusIsOne!=null){
+			array_push($aggregatedRides, $rideObject);
+			$rideIdWhichStatusIsOne=null;
+			$rideObject=null;
+		}
+		
+		//END AGGREGATING RIDES 
+
+		$res = (object)array("users"=>$users, "tdrivers"=>$tdrivers, "rides"=>$aggregatedRides);
 		// print_r($locations);
 		$contents = $this->output
 		                  ->set_content_type('application/json')
@@ -80,9 +130,10 @@ class Users extends CI_Controller {
 			}
 		}
 		$this->UserModel->create_initial_request_poll($rideInfo->rideId,$closestTDriverIds);
-		//Send Push Notifications to drivers
 
-		$res= array("rideId"=>$rideInfo->rideId, "assigned_tdrivers"=>$closestTDriverIds);
+		//...Send Push Notifications to drivers here
+
+		$res= array("rideId"=>$rideInfo->rideId, "assigned_tdrivers"=>$closestTDriverIds, "pickup_location"=>array("lat"=>$rideInfo->lat, "lng"=>$rideInfo->lng));
 		$contents = $this->output
 	              ->set_content_type('application/json')
 	              ->set_output(json_encode($res));
