@@ -84,6 +84,7 @@ class UserModel extends CI_Model {
 
 		$sql = "UPDATE user_latest_locations SET lat =?, lng=?, reg_date = NOW() WHERE user_id = ?";
 		$query = $this->db->query($sql, array($lat, $lng, $userId));
+		return $this->db->affected_rows();
 	}
 
 	function create_initial_request_poll($rideId, $tdriverIdArray){

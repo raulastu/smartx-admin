@@ -45,10 +45,9 @@ $route['tdrivers/(.+)'] = "tdrivers/$1";
 $route['tdrivers/(.+)/(.+)'] = "tdrivers/$1/$2";
 $route['tdrivers'] = 'tdrivers';
 $route['users/(.+)'] = "users/$1";
+$route['user/(.+)'] = "users/$1";
 $route['fblogin/dologin'] = 'fblogin/dologin';
 $route['fblogin'] = 'fblogin';
-$route['user/(:any)'] = 'user/view/$1';
-$route['user'] = 'user';
 $route['(:any)'] = 'pages/view/$1';
 $route['default_controller'] = 'pages/view';
 

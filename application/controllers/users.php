@@ -71,6 +71,26 @@ class Users extends CI_Controller {
 		                  ->set_output(json_encode($res));
 		 // echo json_encode($data['tdrivers_locations']);
 	}
+
+	public function update_location()
+	{
+		$data = $this->input->post('data');
+		$data = explode(':',$data);
+		// print_r($data);
+		$userId = $data[0];
+		$lat = $data[1];
+		$lng = $data[2];
+
+
+		$affectedRows = $this->UserModel->updateUserLocation($userId, $lat, $lng);
+		// print_r($locations);
+		$contents = $this->output
+		                  ->set_content_type('application/json')
+		                  ->set_output(json_encode($affectedRows));
+		 // echo json_encode($data['tdrivers_locations']);
+	}
+	
+
 	public function locations()
 	{
 		$locations = $this->UserModel->getUserLocations();
@@ -80,6 +100,7 @@ class Users extends CI_Controller {
 		                  ->set_output(json_encode($locations));
 		 // echo json_encode($data['tdrivers_locations']);
 	}
+
 
 	public function create_user()
 	{
@@ -200,10 +221,10 @@ class Users extends CI_Controller {
 
 
 
-	public function fakelogin()
+	public function fakelogin($username)
 	{
-		$userName = $this->input->post('username');
-		$userId = $this->UserModel->login($userName);
+		// $userName = $this->input->get('username');
+		$userId = $this->UserModel->login($username);
 		$contents = $this->output
                   ->set_content_type('application/json')
                   ->set_output(json_encode((object)($userId)));

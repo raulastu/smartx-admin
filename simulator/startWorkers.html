@@ -10,8 +10,35 @@
     <script type="text/javascript" src="../js/vendor/jquery-1.9.0.min.js"></script>
     <script type="text/javascript">
       var taxiWorker = [];
+      var userWorker = [];
+        // $.ajax({
+        //     url: "../tdrivers/locations",
+        //     context: document.body,
+        //     type:'json'
+        //   }).done(function(data) {
+        //     console.log(data);
+        //     if(data==null) return;
+        //     for (var i = 0; i < data.length; i++) {
+
+        //       var worker = new Worker('taxiWorker.js');
+
+        //       worker.addEventListener('message', function(e) {
+        //         console.log('Worker '+e.data.id+' said:');
+        //         console.log(e.data.data);
+        //       }, false);
+        //       worker.postMessage({
+        //         type:'init',
+        //         tdriver_id:data[i]['id'],
+        //         lat:parseFloat(data[i]['lat']),
+        //         lng:parseFloat(data[i]['lng'])
+        //       }); // Send data to our worker.
+
+        //       taxiWorker[data[i]['tdriver_id']]=worker;
+        //       // console.log(data[i]['tdriver_id'] + " successfully worker init");
+        //     };
+        //   });
         $.ajax({
-            url: "../tdrivers/locations",
+            url: "../users/locations",
             context: document.body,
             type:'json'
           }).done(function(data) {
@@ -19,20 +46,20 @@
             if(data==null) return;
             for (var i = 0; i < data.length; i++) {
 
-              var worker = new Worker('taxiWorker.js');
+              var userWorker = new Worker('userWorker.js');
 
-              worker.addEventListener('message', function(e) {
-                console.log('Worker '+e.data.id+' said:');
+              userWorker.addEventListener('message', function(e) {
+                console.log('User '+e.data.id+' said:');
                 console.log(e.data.data);
               }, false);
-              worker.postMessage({
+              userWorker.postMessage({
                 type:'init',
-                tdriver_id:data[i]['id'],
+                user_id:data[i]['id'],
                 lat:parseFloat(data[i]['lat']),
                 lng:parseFloat(data[i]['lng'])
-              }); // Send data to our worker.
+              }); // Send data to our userWorker.
 
-              taxiWorker[data[i]['tdriver_id']]=worker;
+              userWorker[data[i]['tdriver_id']]=userWorker;
               // console.log(data[i]['tdriver_id'] + " successfully worker init");
             };
           });

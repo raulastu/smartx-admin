@@ -38,7 +38,7 @@ function init(){
 			// distanceInMettersIWouldTravelInSecondsSeconds = 10/seconds;	
 			var distanceToUser = distanceFromTwoPoints(lat, lng, pointToGoLat, pointToGoLng);
 
-			//SOME TWEAKING MAY BE NEEDED - sometimes it does not get to the same point as the user is, even though the locations are identical.
+			//SOME TWEAKING MAY BE NEEDED - sometimes it does not get to the same point as the user is, even though the locations are ident
 			if(distanceToUser==0){	
 				self.postMessage({id:tdriver_id,data:"Arrived"});
 			}
